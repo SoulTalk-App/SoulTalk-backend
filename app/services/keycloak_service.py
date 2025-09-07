@@ -222,14 +222,15 @@ class KeycloakService:
     async def verify_token(self, token: str) -> Dict:
         """Verify and decode access token"""
         try:
+            # Use the same client that issued the tokens (mobile_openid)
             KEYCLOAK_PUBLIC_KEY = (
                 "-----BEGIN PUBLIC KEY-----\n"
-                + self.keycloak_openid.public_key()
+                + self.mobile_openid.public_key()
                 + "\n-----END PUBLIC KEY-----"
             )
             
             options = {"verify_signature": True, "verify_aud": False, "verify_exp": True}
-            token_info = self.keycloak_openid.decode_token(
+            token_info = self.mobile_openid.decode_token(
                 token, key=KEYCLOAK_PUBLIC_KEY, options=options
             )
             return token_info
@@ -240,10 +241,42 @@ class KeycloakService:
     async def logout_user(self, refresh_token: str) -> bool:
         """Logout user by invalidating refresh token"""
         try:
-            self.keycloak_openid.logout(refresh_token)
+            # Use the same client that issued the tokens (mobile_openid)
+            self.mobile_openid.logout(refresh_token)
             return True
         except KeycloakError as e:
-            logger.error(f"Logout failed: {str(e)}")
+            logger.error(f"Logout failed with mobile client: {str(e)}")
+            # Fallback: try with direct API call
+            try:
+                return await self._logout_user_direct(refresh_token)
+            except Exception as fallback_error:
+                logger.error(f"Direct API logout also failed: {fallback_error}")
+                return False
+
+    async def _logout_user_direct(self, refresh_token: str) -> bool:
+        """Logout user using direct API call as fallback"""
+        import requests
+        
+        try:
+            url = f"{self.server_url}/realms/{self.realm_name}/protocol/openid-connect/logout"
+            data = {
+                'client_id': self.mobile_client_id,
+                'client_secret': self.mobile_client_secret,
+                'refresh_token': refresh_token
+            }
+            headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+            
+            response = requests.post(url, data=data, headers=headers, verify=False)
+            
+            if response.status_code == 204:
+                logger.info("User logged out successfully via direct API")
+                return True
+            else:
+                logger.warning(f"Direct API logout failed: {response.status_code} - {response.text}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error in direct API logout: {str(e)}")
             return False
 
     def get_user_by_id(self, user_id: str) -> Optional[Dict]:
@@ -307,13 +340,53 @@ class KeycloakService:
             logger.error(f"Error removing user {user_id} from group {group_name}: {str(e)}")
             return False
 
-    def get_user_groups(self, user_id: str) -> List[Dict]:
-        """Get user's groups"""
+    async def get_user_groups(self, user_id: str) -> List[Dict]:
+        """Get user's groups using direct API call"""
         try:
-            return self.keycloak_admin.get_user_groups(user_id)
-        except KeycloakError as e:
+            admin_token = await self._get_admin_token()
+            
+            import requests
+            headers = {'Authorization': f'Bearer {admin_token}'}
+            
+            response = requests.get(
+                f"{self.server_url}/admin/realms/{self.realm_name}/users/{user_id}/groups",
+                headers=headers,
+                verify=False
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logger.warning(f"Failed to get user groups: {response.status_code} - {response.text}")
+                return []
+            
+        except Exception as e:
             logger.error(f"Error getting groups for user {user_id}: {str(e)}")
             return []
+
+    async def get_user_by_id_direct(self, user_id: str) -> Optional[Dict]:
+        """Get user information by ID using direct API call"""
+        try:
+            admin_token = await self._get_admin_token()
+            
+            import requests
+            headers = {'Authorization': f'Bearer {admin_token}'}
+            
+            response = requests.get(
+                f"{self.server_url}/admin/realms/{self.realm_name}/users/{user_id}",
+                headers=headers,
+                verify=False
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logger.warning(f"Failed to get user by ID: {response.status_code} - {response.text}")
+                return None
+            
+        except Exception as e:
+            logger.error(f"Error getting user by ID {user_id}: {str(e)}")
+            return None
 
     async def reset_password(self, email: str) -> bool:
         """Send password reset email"""

@@ -156,8 +156,8 @@ async def get_user_profile(current_user: Dict = Depends(get_current_user)):
     """Get current user profile"""
     try:
         user_id = current_user.get("sub")
-        user_data = keycloak_service.get_user_by_id(user_id)
-        user_groups = keycloak_service.get_user_groups(user_id)
+        user_data = await keycloak_service.get_user_by_id_direct(user_id)
+        user_groups = await keycloak_service.get_user_groups(user_id)
         
         if not user_data:
             raise HTTPException(
