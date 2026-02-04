@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from contextlib import asynccontextmanager
@@ -6,6 +6,9 @@ import logging
 
 from app.core.config import settings
 from app.api.auth import router as auth_router
+from app.api.social_auth import router as social_auth_router
+from app.db.session import engine
+from app.db.base import Base
 
 
 # Configure logging
@@ -21,19 +24,23 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
-    logger.info(f"Keycloak Server: {settings.KEYCLOAK_SERVER_URL}")
-    logger.info(f"Keycloak Realm: {settings.KEYCLOAK_REALM}")
-    
+    logger.info(f"Database: Connected")
+
+    # Note: In production, use Alembic migrations instead of create_all
+    # async with engine.begin() as conn:
+    #     await conn.run_sync(Base.metadata.create_all)
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down application")
+    await engine.dispose()
 
 
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="SoulTalk Backend API with Keycloak Authentication",
+    description="SoulTalk Backend API with PostgreSQL Authentication",
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
     lifespan=lifespan
@@ -54,6 +61,7 @@ if settings.ENVIRONMENT == "production":
 
 # Include routers
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
+app.include_router(social_auth_router, prefix="/api/auth", tags=["Social Authentication"])
 
 
 @app.get("/")
@@ -76,25 +84,6 @@ async def health_check():
         "version": settings.APP_VERSION,
         "environment": settings.ENVIRONMENT
     }
-
-
-@app.get("/api/protected")
-async def protected_route():
-    """Example protected route (requires authentication)"""
-    from app.api.auth import get_current_user
-    from fastapi import Depends
-    
-    async def protected_endpoint(current_user: dict = Depends(get_current_user)):
-        return {
-            "message": "This is a protected route",
-            "user": {
-                "id": current_user.get("sub"),
-                "email": current_user.get("email"),
-                "name": current_user.get("name")
-            }
-        }
-    
-    return await protected_endpoint()
 
 
 if __name__ == "__main__":
