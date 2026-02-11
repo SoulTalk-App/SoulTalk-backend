@@ -27,8 +27,8 @@ async def lifespan(app: FastAPI):
     logger.info(f"Database: Connected")
 
     # Note: In production, use Alembic migrations instead of create_all
-    # async with engine.begin() as conn:
-    #     await conn.run_sync(Base.metadata.create_all)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
     yield
 
