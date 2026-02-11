@@ -90,5 +90,11 @@ class JWTService:
         token_hash = self._hash_token(raw_token)
         return raw_token, token_hash
 
+    def generate_otp_code(self, length: int = 6) -> Tuple[str, str]:
+        """Generate a numeric OTP code. Returns (code, code_hash)."""
+        code = ''.join([str(secrets.randbelow(10)) for _ in range(length)])
+        code_hash = self._hash_token(code)
+        return code, code_hash
+
 
 jwt_service = JWTService()

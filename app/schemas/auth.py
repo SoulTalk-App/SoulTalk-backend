@@ -1,5 +1,20 @@
-from pydantic import BaseModel, EmailStr, Field
+import re
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
+
+PASSWORD_PATTERN = re.compile(
+    r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])'
+)
+PASSWORD_ERROR = (
+    "Password must contain at least one uppercase letter, "
+    "one lowercase letter, one digit, and one special character (!@#$%^&*)"
+)
+
+
+def validate_password_complexity(password: str) -> str:
+    if not PASSWORD_PATTERN.search(password):
+        raise ValueError(PASSWORD_ERROR)
+    return password
 
 
 class UserRegistration(BaseModel):
@@ -7,6 +22,11 @@ class UserRegistration(BaseModel):
     password: str = Field(..., min_length=8, max_length=128)
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: str = Field(..., min_length=1, max_length=100)
+
+    @field_validator('password')
+    @classmethod
+    def check_password_complexity(cls, v: str) -> str:
+        return validate_password_complexity(v)
 
 
 class UserLogin(BaseModel):
@@ -26,9 +46,19 @@ class NewPasswordRequest(BaseModel):
     token: str
     new_password: str = Field(..., min_length=8, max_length=128)
 
+    @field_validator('new_password')
+    @classmethod
+    def check_password_complexity(cls, v: str) -> str:
+        return validate_password_complexity(v)
+
 
 class SetPasswordRequest(BaseModel):
     password: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator('password')
+    @classmethod
+    def check_password_complexity(cls, v: str) -> str:
+        return validate_password_complexity(v)
 
 
 class AuthResponse(BaseModel):
@@ -45,6 +75,11 @@ class SocialAuthRequest(BaseModel):
 
 class VerifyEmailRequest(BaseModel):
     token: str
+
+
+class VerifyOTPRequest(BaseModel):
+    email: EmailStr
+    code: str = Field(..., min_length=6, max_length=6)
 
 
 class ResendVerificationRequest(BaseModel):

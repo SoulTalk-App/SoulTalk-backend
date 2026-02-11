@@ -57,28 +57,30 @@ class AuthService:
             provider_email=email.lower()
         )
 
-        # Create verification token
-        raw_token, token_hash = jwt_service.create_verification_token()
+        # Create OTP code
+        otp_code, code_hash = jwt_service.generate_otp_code(settings.OTP_LENGTH)
         expires_at = datetime.now(timezone.utc) + timedelta(
-            hours=settings.EMAIL_VERIFICATION_EXPIRE_HOURS
+            minutes=settings.OTP_EXPIRE_MINUTES
         )
 
         verification = EmailVerificationToken(
             user_id=user.id,
-            token_hash=token_hash,
+            token_hash=code_hash,
             token_type="email_verification",
             expires_at=expires_at
         )
         db.add(verification)
 
+        logger.info(f"OTP code for {email}: {otp_code}")
+
         # Send verification email
         await email_service.send_verification_email(
             to_email=email,
             first_name=first_name,
-            token=raw_token
+            otp_code=otp_code
         )
 
-        return user, raw_token
+        return user, otp_code
 
     async def login(
         self,
@@ -101,6 +103,9 @@ class AuthService:
 
         if not await self.user_service.verify_password(user, password):
             raise ValueError("Invalid email or password")
+
+        if not user.email_verified:
+            raise ValueError("Please verify your email before logging in")
 
         # Update last login
         await self.user_service.update_last_login(db, user)
@@ -191,36 +196,38 @@ class AuthService:
     async def verify_email(
         self,
         db: AsyncSession,
-        token: str
+        email: str,
+        code: str
     ) -> User:
-        """Verify user email with token"""
-        token_hash = jwt_service.hash_refresh_token(token)  # Same hashing mechanism
+        """Verify user email with OTP code"""
+        # Look up user by email
+        user = await self.user_service.get_user_by_email(db, email)
+        if not user:
+            raise ValueError("Invalid verification code")
+
+        code_hash = jwt_service.hash_refresh_token(code)  # Same hashing mechanism
 
         result = await db.execute(
             select(EmailVerificationToken)
             .where(
-                EmailVerificationToken.token_hash == token_hash,
-                EmailVerificationToken.token_type == "email_verification"
+                EmailVerificationToken.token_hash == code_hash,
+                EmailVerificationToken.token_type == "email_verification",
+                EmailVerificationToken.user_id == user.id
             )
         )
         verification = result.scalar_one_or_none()
 
         if not verification:
-            raise ValueError("Invalid verification token")
+            raise ValueError("Invalid verification code")
 
         if verification.is_used:
-            raise ValueError("Token has already been used")
+            raise ValueError("Code has already been used")
 
         if verification.is_expired:
-            raise ValueError("Token has expired")
+            raise ValueError("Code has expired")
 
         # Mark token as used
         verification.is_used = True
-
-        # Get and verify user
-        user = await self.user_service.get_user_by_id(db, verification.user_id)
-        if not user:
-            raise ValueError("User not found")
 
         await self.user_service.mark_email_verified(db, user)
 
@@ -329,25 +336,27 @@ class AuthService:
             .values(is_used=True)
         )
 
-        # Create new token
-        raw_token, token_hash = jwt_service.create_verification_token()
+        # Create new OTP code
+        otp_code, code_hash = jwt_service.generate_otp_code(settings.OTP_LENGTH)
         expires_at = datetime.now(timezone.utc) + timedelta(
-            hours=settings.EMAIL_VERIFICATION_EXPIRE_HOURS
+            minutes=settings.OTP_EXPIRE_MINUTES
         )
 
         verification = EmailVerificationToken(
             user_id=user.id,
-            token_hash=token_hash,
+            token_hash=code_hash,
             token_type="email_verification",
             expires_at=expires_at
         )
         db.add(verification)
 
+        logger.info(f"OTP code for {email}: {otp_code}")
+
         # Send email
         await email_service.send_verification_email(
             to_email=email,
             first_name=user.first_name,
-            token=raw_token
+            otp_code=otp_code
         )
 
         return True

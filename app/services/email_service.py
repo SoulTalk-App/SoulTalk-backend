@@ -67,11 +67,9 @@ class EmailService:
         self,
         to_email: str,
         first_name: str,
-        token: str
+        otp_code: str
     ) -> bool:
-        """Send email verification email"""
-        verification_url = f"{self.frontend_url}/verify-email?token={token}"
-
+        """Send email verification OTP code"""
         subject = "Verify your SoulTalk email"
 
         html_content = f"""
@@ -81,13 +79,15 @@ class EmailService:
             <style>
                 body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
                 .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                .button {{
+                .otp-code {{
                     display: inline-block;
-                    padding: 12px 24px;
+                    padding: 16px 32px;
                     background-color: #4F46E5;
                     color: white;
-                    text-decoration: none;
-                    border-radius: 6px;
+                    font-size: 32px;
+                    font-weight: bold;
+                    letter-spacing: 8px;
+                    border-radius: 8px;
                     margin: 20px 0;
                 }}
                 .footer {{ margin-top: 30px; font-size: 12px; color: #666; }}
@@ -96,11 +96,9 @@ class EmailService:
         <body>
             <div class="container">
                 <h2>Welcome to SoulTalk, {first_name}!</h2>
-                <p>Thank you for signing up. Please verify your email address by clicking the button below:</p>
-                <a href="{verification_url}" class="button">Verify Email</a>
-                <p>Or copy and paste this link in your browser:</p>
-                <p><a href="{verification_url}">{verification_url}</a></p>
-                <p>This link will expire in {settings.EMAIL_VERIFICATION_EXPIRE_HOURS} hours.</p>
+                <p>Thank you for signing up. Use the following code to verify your email address:</p>
+                <div class="otp-code">{otp_code}</div>
+                <p>This code will expire in {settings.OTP_EXPIRE_MINUTES} minutes.</p>
                 <div class="footer">
                     <p>If you didn't create an account with SoulTalk, you can safely ignore this email.</p>
                 </div>
@@ -112,10 +110,11 @@ class EmailService:
         text_content = f"""
         Welcome to SoulTalk, {first_name}!
 
-        Thank you for signing up. Please verify your email address by visiting:
-        {verification_url}
+        Thank you for signing up. Use the following code to verify your email address:
 
-        This link will expire in {settings.EMAIL_VERIFICATION_EXPIRE_HOURS} hours.
+        {otp_code}
+
+        This code will expire in {settings.OTP_EXPIRE_MINUTES} minutes.
 
         If you didn't create an account with SoulTalk, you can safely ignore this email.
         """

@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     EMAIL_VERIFICATION_EXPIRE_HOURS: int = 24
     PASSWORD_RESET_EXPIRE_HOURS: int = 1
 
+    # OTP settings
+    OTP_LENGTH: int = 6
+    OTP_EXPIRE_MINUTES: int = 10
+
     # CORS
     CORS_ORIGINS: List[str] = [
         "http://localhost:3000",

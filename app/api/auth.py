@@ -16,6 +16,7 @@ from app.schemas.auth import (
     NewPasswordRequest,
     SetPasswordRequest,
     AuthResponse,
+    VerifyOTPRequest,
     ResendVerificationRequest,
     MessageResponse,
     UserIdResponse
@@ -201,15 +202,25 @@ async def confirm_password_reset(
         )
 
 
-@router.get("/verify-email/{token}", response_model=MessageResponse)
+@router.post("/verify-email", response_model=AuthResponse)
 async def verify_email(
-    token: str,
+    data: VerifyOTPRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db)
 ):
-    """Verify user email with token"""
+    """Verify user email with OTP code and auto-login"""
     try:
-        await auth_service.verify_email(db, token)
-        return MessageResponse(message="Email verified successfully")
+        device_info, ip_address = get_client_info(request)
+        user = await auth_service.verify_email(db, data.email, data.code)
+        # Auto-login: generate tokens
+        access_token, refresh_token, expires_in = await auth_service._generate_tokens(
+            db, user, device_info, ip_address
+        )
+        return AuthResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            expires_in=expires_in
+        )
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
