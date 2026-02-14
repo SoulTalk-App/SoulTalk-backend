@@ -16,6 +16,9 @@ email-validator==2.1.0
 jinja2==3.1.2
 aiofiles==23.2.1
 
+# AI / OpenAI
+openai>=1.12.0
+
 # Social authentication
 google-auth==2.25.0
 httpx==0.25.2

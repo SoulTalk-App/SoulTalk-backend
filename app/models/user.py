@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from app.models.social_account import SocialAccount
     from app.models.refresh_token import RefreshToken
     from app.models.email_verification import EmailVerificationToken
+    from app.models.journal_entry import JournalEntry
 
 
 class User(Base):
@@ -74,6 +75,11 @@ class User(Base):
     )
     email_verification_tokens: Mapped[List["EmailVerificationToken"]] = relationship(
         "EmailVerificationToken",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+    journal_entries: Mapped[List["JournalEntry"]] = relationship(
+        "JournalEntry",
         back_populates="user",
         cascade="all, delete-orphan"
     )

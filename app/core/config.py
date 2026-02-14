@@ -48,6 +48,10 @@ class Settings(BaseSettings):
     OTP_LENGTH: int = 6
     OTP_EXPIRE_MINUTES: int = 10
 
+    # OpenAI
+    OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-4o-mini"
+
     # CORS
     CORS_ORIGINS: List[str] = [
         "http://localhost:3000",

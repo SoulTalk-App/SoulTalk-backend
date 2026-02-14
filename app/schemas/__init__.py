@@ -15,6 +15,12 @@ from app.schemas.user import (
     UserUpdate,
     LinkedAccountResponse
 )
+from app.schemas.journal import (
+    JournalEntryCreate,
+    JournalEntryUpdate,
+    JournalEntryResponse,
+    JournalEntryListResponse,
+)
 
 __all__ = [
     "UserRegistration",
@@ -29,5 +35,9 @@ __all__ = [
     "TokenVerifyResponse",
     "UserResponse",
     "UserUpdate",
-    "LinkedAccountResponse"
+    "LinkedAccountResponse",
+    "JournalEntryCreate",
+    "JournalEntryUpdate",
+    "JournalEntryResponse",
+    "JournalEntryListResponse",
 ]
