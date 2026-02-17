@@ -10,24 +10,36 @@ router = APIRouter()
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: dict[str, WebSocket] = {}
+        self.active_connections: dict[str, set[WebSocket]] = {}
 
     def register(self, user_id: str, websocket: WebSocket):
-        self.active_connections[user_id] = websocket
-        logger.info(f"WebSocket registered: user {user_id}")
+        if user_id not in self.active_connections:
+            self.active_connections[user_id] = set()
+        self.active_connections[user_id].add(websocket)
+        logger.info(f"WebSocket registered: user {user_id} ({len(self.active_connections[user_id])} connections)")
 
-    def disconnect(self, user_id: str):
-        self.active_connections.pop(user_id, None)
+    def disconnect(self, user_id: str, websocket: WebSocket):
+        conns = self.active_connections.get(user_id)
+        if conns:
+            conns.discard(websocket)
+            if not conns:
+                del self.active_connections[user_id]
         logger.info(f"WebSocket disconnected: user {user_id}")
 
     async def send_to_user(self, user_id: str, data: dict):
-        ws = self.active_connections.get(user_id)
-        if ws:
+        conns = self.active_connections.get(user_id)
+        if not conns:
+            return
+        dead: list[WebSocket] = []
+        for ws in conns:
             try:
                 await ws.send_json(data)
             except Exception:
-                logger.warning(f"Failed to send WS message to user {user_id}")
-                self.disconnect(user_id)
+                dead.append(ws)
+        for ws in dead:
+            conns.discard(ws)
+        if not conns:
+            del self.active_connections[user_id]
 
 
 connection_manager = ConnectionManager()
@@ -63,4 +75,4 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
-        connection_manager.disconnect(user_id)
+        connection_manager.disconnect(user_id, websocket)
