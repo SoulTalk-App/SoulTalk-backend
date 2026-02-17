@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, status, Request
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Dict
 import logging
@@ -21,7 +22,7 @@ from app.schemas.auth import (
     MessageResponse,
     UserIdResponse
 )
-from app.schemas.user import UserResponse
+from app.schemas.user import UserResponse, UserUpdate
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -153,9 +154,59 @@ async def get_user_profile(
         email=current_user.email,
         first_name=current_user.first_name,
         last_name=current_user.last_name,
+        display_name=current_user.display_name,
+        username=current_user.username,
+        bio=current_user.bio,
+        pronoun=current_user.pronoun,
         email_verified=current_user.email_verified,
         providers=providers,
         created_at=current_user.created_at
+    )
+
+
+@router.put("/me", response_model=UserResponse)
+async def update_user_profile(
+    data: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Update current user profile"""
+    update_fields = data.model_dump(exclude_unset=True)
+    if not update_fields:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No fields to update"
+        )
+
+    # Check username uniqueness if being changed
+    if "username" in update_fields and update_fields["username"] is not None:
+        existing = await db.execute(
+            select(User).where(
+                User.username == update_fields["username"],
+                User.id != current_user.id,
+            )
+        )
+        if existing.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Username already taken"
+            )
+
+    user = await user_service.update_user(db, current_user, **update_fields)
+    providers = await user_service.get_user_providers(db, current_user.id)
+
+    return UserResponse(
+        id=str(user.id),
+        email=user.email,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        display_name=user.display_name,
+        username=user.username,
+        bio=user.bio,
+        pronoun=user.pronoun,
+        email_verified=user.email_verified,
+        providers=providers,
+        created_at=user.created_at
     )
 
 

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 from datetime import datetime
 import uuid
@@ -9,6 +9,10 @@ class UserResponse(BaseModel):
     email: str
     first_name: str
     last_name: str
+    display_name: Optional[str] = None
+    username: Optional[str] = None
+    bio: Optional[str] = None
+    pronoun: Optional[str] = None
     email_verified: bool
     providers: List[str]  # List of linked providers (google, facebook, email)
     created_at: Optional[datetime] = None
@@ -20,6 +24,10 @@ class UserResponse(BaseModel):
 class UserUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
+    display_name: Optional[str] = None
+    username: Optional[str] = Field(None, min_length=2, max_length=50, pattern=r'^[a-zA-Z0-9_]+$')
+    bio: Optional[str] = Field(None, max_length=200)
+    pronoun: Optional[str] = Field(None, max_length=30)
 
 
 class LinkedAccountResponse(BaseModel):
@@ -36,6 +44,10 @@ class UserProfileResponse(BaseModel):
     email: str
     first_name: str
     last_name: str
+    display_name: Optional[str] = None
+    username: Optional[str] = None
+    bio: Optional[str] = None
+    pronoun: Optional[str] = None
     email_verified: bool
     is_active: bool
     providers: List[str]

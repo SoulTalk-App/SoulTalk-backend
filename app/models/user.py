@@ -40,6 +40,24 @@ class User(Base):
         String(100),
         nullable=False
     )
+    display_name: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+    username: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        unique=True,
+        index=True
+    )
+    bio: Mapped[str | None] = mapped_column(
+        String(200),
+        nullable=True
+    )
+    pronoun: Mapped[str | None] = mapped_column(
+        String(30),
+        nullable=True
+    )
     email_verified: Mapped[bool] = mapped_column(
         Boolean,
         default=False
