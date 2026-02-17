@@ -59,7 +59,7 @@ app.add_middleware(
 
 # Trusted Host Middleware (for production)
 if settings.ENVIRONMENT == "production":
-    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*.soultalk.com"])
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["soultalkapp.com", "*.soultalkapp.com", "localhost"])
 
 # Include routers
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
