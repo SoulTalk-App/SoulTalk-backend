@@ -12,12 +12,12 @@ class MoodEnum(str, Enum):
 
 
 class JournalEntryCreate(BaseModel):
-    raw_text: str = Field(..., min_length=1)
+    raw_text: str = Field(..., min_length=1, max_length=5000)
     mood: Optional[MoodEnum] = None
 
 
 class JournalEntryUpdate(BaseModel):
-    raw_text: Optional[str] = Field(None, min_length=1)
+    raw_text: Optional[str] = Field(None, min_length=1, max_length=5000)
     mood: Optional[MoodEnum] = None
 
 

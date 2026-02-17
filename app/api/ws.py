@@ -1,7 +1,10 @@
+import asyncio
 import logging
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.services.jwt_service import jwt_service
+
+PING_INTERVAL = 30  # seconds
 
 logger = logging.getLogger(__name__)
 
@@ -71,8 +74,18 @@ async def websocket_endpoint(websocket: WebSocket):
 
     connection_manager.register(user_id, websocket)
 
+    async def send_pings():
+        try:
+            while True:
+                await asyncio.sleep(PING_INTERVAL)
+                await websocket.send_json({"event": "ping"})
+        except Exception:
+            pass
+
+    ping_task = asyncio.create_task(send_pings())
     try:
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
+        ping_task.cancel()
         connection_manager.disconnect(user_id, websocket)

@@ -24,6 +24,26 @@ router = APIRouter()
 journal_service = JournalService()
 
 
+def _entry_response(entry) -> JournalEntryResponse:
+    return JournalEntryResponse(
+        id=str(entry.id),
+        raw_text=entry.raw_text,
+        mood=entry.mood,
+        emotion_primary=entry.emotion_primary,
+        emotion_secondary=entry.emotion_secondary,
+        emotion_intensity=entry.emotion_intensity,
+        nervous_system_state=entry.nervous_system_state,
+        topics=entry.topics,
+        coping_mechanisms=entry.coping_mechanisms,
+        self_talk_style=entry.self_talk_style,
+        time_focus=entry.time_focus,
+        ai_response=entry.ai_response,
+        is_ai_processed=entry.is_ai_processed,
+        created_at=entry.created_at,
+        updated_at=entry.updated_at,
+    )
+
+
 async def process_journal_ai(entry_id: uuid.UUID, user_id: uuid.UUID, raw_text: str):
     """Background task: analyze journal entry via OpenAI and push result via WebSocket."""
     try:
@@ -87,23 +107,7 @@ async def create_journal_entry(
     # Schedule AI analysis in background
     background_tasks.add_task(process_journal_ai, entry.id, current_user.id, data.raw_text)
 
-    return JournalEntryResponse(
-        id=str(entry.id),
-        raw_text=entry.raw_text,
-        mood=entry.mood,
-        emotion_primary=entry.emotion_primary,
-        emotion_secondary=entry.emotion_secondary,
-        emotion_intensity=entry.emotion_intensity,
-        nervous_system_state=entry.nervous_system_state,
-        topics=entry.topics,
-        coping_mechanisms=entry.coping_mechanisms,
-        self_talk_style=entry.self_talk_style,
-        time_focus=entry.time_focus,
-        ai_response=entry.ai_response,
-        is_ai_processed=entry.is_ai_processed,
-        created_at=entry.created_at,
-        updated_at=entry.updated_at,
-    )
+    return _entry_response(entry)
 
 
 @router.get("/", response_model=JournalEntryListResponse)
@@ -125,26 +129,7 @@ async def list_journal_entries(
         per_page=per_page,
     )
     return JournalEntryListResponse(
-        entries=[
-            JournalEntryResponse(
-                id=str(e.id),
-                raw_text=e.raw_text,
-                mood=e.mood,
-                emotion_primary=e.emotion_primary,
-                emotion_secondary=e.emotion_secondary,
-                emotion_intensity=e.emotion_intensity,
-                nervous_system_state=e.nervous_system_state,
-                topics=e.topics,
-                coping_mechanisms=e.coping_mechanisms,
-                self_talk_style=e.self_talk_style,
-                time_focus=e.time_focus,
-                ai_response=e.ai_response,
-                is_ai_processed=e.is_ai_processed,
-                created_at=e.created_at,
-                updated_at=e.updated_at,
-            )
-            for e in entries
-        ],
+        entries=[_entry_response(e) for e in entries],
         total=total,
         page=page,
         per_page=per_page,
@@ -165,23 +150,7 @@ async def get_journal_entry(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
         )
-    return JournalEntryResponse(
-        id=str(entry.id),
-        raw_text=entry.raw_text,
-        mood=entry.mood,
-        emotion_primary=entry.emotion_primary,
-        emotion_secondary=entry.emotion_secondary,
-        emotion_intensity=entry.emotion_intensity,
-        nervous_system_state=entry.nervous_system_state,
-        topics=entry.topics,
-        coping_mechanisms=entry.coping_mechanisms,
-        self_talk_style=entry.self_talk_style,
-        time_focus=entry.time_focus,
-        ai_response=entry.ai_response,
-        is_ai_processed=entry.is_ai_processed,
-        created_at=entry.created_at,
-        updated_at=entry.updated_at,
-    )
+    return _entry_response(entry)
 
 
 @router.put("/{entry_id}", response_model=JournalEntryResponse)
@@ -211,23 +180,7 @@ async def update_journal_entry(
     if data.raw_text is not None:
         background_tasks.add_task(process_journal_ai, entry_id, current_user.id, data.raw_text)
 
-    return JournalEntryResponse(
-        id=str(entry.id),
-        raw_text=entry.raw_text,
-        mood=entry.mood,
-        emotion_primary=entry.emotion_primary,
-        emotion_secondary=entry.emotion_secondary,
-        emotion_intensity=entry.emotion_intensity,
-        nervous_system_state=entry.nervous_system_state,
-        topics=entry.topics,
-        coping_mechanisms=entry.coping_mechanisms,
-        self_talk_style=entry.self_talk_style,
-        time_focus=entry.time_focus,
-        ai_response=entry.ai_response,
-        is_ai_processed=entry.is_ai_processed,
-        created_at=entry.created_at,
-        updated_at=entry.updated_at,
-    )
+    return _entry_response(entry)
 
 
 @router.delete("/{entry_id}", status_code=status.HTTP_204_NO_CONTENT)
