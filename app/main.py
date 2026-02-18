@@ -14,10 +14,12 @@ from app.db.session import engine
 from app.db.base import Base
 
 
-# Configure logging
+# Configure logging — force=True ensures our config takes effect
+# even after uvicorn pre-configures the root logger
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    force=True,
 )
 logger = logging.getLogger(__name__)
 

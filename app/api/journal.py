@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 import uuid
 import logging
+import traceback
 
 from app.db.dependencies import get_db
 from app.db.session import async_session_maker
@@ -46,8 +47,10 @@ def _entry_response(entry) -> JournalEntryResponse:
 
 async def process_journal_ai(entry_id: uuid.UUID, user_id: uuid.UUID, raw_text: str):
     """Background task: analyze journal entry via OpenAI and push result via WebSocket."""
+    logger.info(f"[AI] Starting analysis for entry {entry_id}")
     try:
         analysis = await ai_service.analyze_journal_entry(raw_text)
+        logger.info(f"[AI] OpenAI analysis complete for entry {entry_id}")
 
         async with async_session_maker() as db:
             try:
@@ -65,6 +68,7 @@ async def process_journal_ai(entry_id: uuid.UUID, user_id: uuid.UUID, raw_text: 
                     ai_response=analysis.ai_response,
                 )
                 await db.commit()
+                logger.info(f"[AI] DB commit successful for entry {entry_id}, is_ai_processed={entry.is_ai_processed}")
 
                 # Push to mobile via WebSocket
                 await connection_manager.send_to_user(str(user_id), {
@@ -81,12 +85,14 @@ async def process_journal_ai(entry_id: uuid.UUID, user_id: uuid.UUID, raw_text: 
                     "ai_response": analysis.ai_response,
                     "is_ai_processed": True,
                 })
+                logger.info(f"[AI] WebSocket notification sent for entry {entry_id}")
             except Exception:
                 await db.rollback()
                 raise
 
     except Exception as e:
-        logger.error(f"AI processing failed for entry {entry_id}: {e}")
+        logger.error(f"[AI] Processing FAILED for entry {entry_id}: {type(e).__name__}: {e}")
+        logger.error(f"[AI] Traceback: {traceback.format_exc()}")
 
 
 @router.post("/", response_model=JournalEntryResponse, status_code=status.HTTP_201_CREATED)

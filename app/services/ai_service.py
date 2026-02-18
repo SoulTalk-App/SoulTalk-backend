@@ -63,6 +63,7 @@ class AIService:
         )
 
         content = response.choices[0].message.content
+        logger.info(f"[AI] Raw OpenAI response length: {len(content) if content else 0}")
         data = json.loads(content)
         return JournalAnalysis(**data)
 
