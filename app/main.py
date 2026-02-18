@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.api.auth import router as auth_router
 from app.api.social_auth import router as social_auth_router
 from app.api.journal import router as journal_router
+from app.api.mood import router as mood_router
 from app.api.ws import router as ws_router
 from app.db.session import engine
 from app.db.base import Base
@@ -67,6 +68,7 @@ if settings.ENVIRONMENT == "production":
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(social_auth_router, prefix="/api/auth", tags=["Social Authentication"])
 app.include_router(journal_router, prefix="/api/journal", tags=["Journal"])
+app.include_router(mood_router, prefix="/api/mood", tags=["Mood"])
 app.include_router(ws_router, tags=["WebSocket"])
 
 

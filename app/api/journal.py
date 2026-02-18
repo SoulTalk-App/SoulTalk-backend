@@ -114,17 +114,21 @@ async def create_journal_entry(
 async def list_journal_entries(
     year: Optional[int] = Query(None),
     month: Optional[int] = Query(None, ge=1, le=12),
+    mood: Optional[str] = Query(None),
+    is_ai_processed: Optional[bool] = Query(None),
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """List journal entries with optional year/month filtering"""
+    """List journal entries with optional year/month/mood/reflected filtering"""
     entries, total = await journal_service.list_entries(
         db=db,
         user_id=current_user.id,
         year=year,
         month=month,
+        mood=mood,
+        is_ai_processed=is_ai_processed,
         page=page,
         per_page=per_page,
     )

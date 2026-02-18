@@ -48,6 +48,8 @@ class JournalService:
         user_id: uuid.UUID,
         year: Optional[int] = None,
         month: Optional[int] = None,
+        mood: Optional[str] = None,
+        is_ai_processed: Optional[bool] = None,
         page: int = 1,
         per_page: int = 20,
     ) -> Tuple[List[JournalEntry], int]:
@@ -60,6 +62,12 @@ class JournalService:
         if month is not None:
             query = query.where(extract("month", JournalEntry.created_at) == month)
             count_query = count_query.where(extract("month", JournalEntry.created_at) == month)
+        if mood is not None:
+            query = query.where(JournalEntry.mood == mood)
+            count_query = count_query.where(JournalEntry.mood == mood)
+        if is_ai_processed is not None:
+            query = query.where(JournalEntry.is_ai_processed == is_ai_processed)
+            count_query = count_query.where(JournalEntry.is_ai_processed == is_ai_processed)
 
         # Get total count
         total_result = await db.execute(count_query)

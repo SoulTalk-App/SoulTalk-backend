@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, status, Request
+from fastapi import APIRouter, HTTPException, Depends, status, Request, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Dict
@@ -301,6 +301,19 @@ async def resend_verification_email(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+
+
+@router.get("/check-username")
+async def check_username(
+    username: str = Query(..., min_length=1, max_length=50),
+    db: AsyncSession = Depends(get_db),
+):
+    """Check if a username is available"""
+    result = await db.execute(
+        select(User).where(User.username == username)
+    )
+    existing = result.scalar_one_or_none()
+    return {"available": existing is None}
 
 
 @router.post("/set-password", response_model=MessageResponse)
