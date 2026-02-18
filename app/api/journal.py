@@ -110,6 +110,9 @@ async def create_journal_entry(
         mood=data.mood.value if data.mood else None,
     )
 
+    # Commit now so the background task's independent session can find the entry
+    await db.commit()
+
     # Schedule AI analysis in background
     background_tasks.add_task(process_journal_ai, entry.id, current_user.id, data.raw_text)
 
@@ -188,6 +191,8 @@ async def update_journal_entry(
 
     # Re-analyze if text changed
     if data.raw_text is not None:
+        # Commit now so the background task's independent session can see the update
+        await db.commit()
         background_tasks.add_task(process_journal_ai, entry_id, current_user.id, data.raw_text)
 
     return _entry_response(entry)
