@@ -9,6 +9,8 @@ from app.db.dependencies import get_db
 from app.db.session import async_session_maker
 from app.api.deps import get_current_active_user
 from app.services.journal_service import JournalService
+from app.services.streak_service import streak_service
+from app.services.soul_bar_service import soul_bar_service
 from app.services.ai_service import ai_service
 from app.api.ws import connection_manager
 from app.models.user import User
@@ -40,6 +42,7 @@ def _entry_response(entry) -> JournalEntryResponse:
         time_focus=entry.time_focus,
         ai_response=entry.ai_response,
         is_ai_processed=entry.is_ai_processed,
+        is_draft=entry.is_draft,
         created_at=entry.created_at,
         updated_at=entry.updated_at,
     )
@@ -108,13 +111,24 @@ async def create_journal_entry(
         user_id=current_user.id,
         raw_text=data.raw_text,
         mood=data.mood.value if data.mood else None,
+        is_draft=data.is_draft,
     )
 
     # Commit now so the background task's independent session can find the entry
     await db.commit()
 
-    # Schedule AI analysis in background
-    background_tasks.add_task(process_journal_ai, entry.id, current_user.id, data.raw_text)
+    # Non-draft entries trigger streak, SoulBar, and AI analysis
+    if not data.is_draft:
+        async with async_session_maker() as side_db:
+            try:
+                await streak_service.record_journal_entry(side_db, current_user.id)
+                await soul_bar_service.add_point(side_db, current_user.id)
+                await side_db.commit()
+            except Exception as e:
+                await side_db.rollback()
+                logger.error(f"[Journal] Streak/SoulBar update failed: {e}")
+
+        background_tasks.add_task(process_journal_ai, entry.id, current_user.id, data.raw_text)
 
     return _entry_response(entry)
 
@@ -125,12 +139,13 @@ async def list_journal_entries(
     month: Optional[int] = Query(None, ge=1, le=12),
     mood: Optional[str] = Query(None),
     is_ai_processed: Optional[bool] = Query(None),
+    is_draft: Optional[bool] = Query(False),
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """List journal entries with optional year/month/mood/reflected filtering"""
+    """List journal entries with optional year/month/mood/reflected/draft filtering"""
     entries, total = await journal_service.list_entries(
         db=db,
         user_id=current_user.id,
@@ -138,6 +153,7 @@ async def list_journal_entries(
         month=month,
         mood=mood,
         is_ai_processed=is_ai_processed,
+        is_draft=is_draft,
         page=page,
         per_page=per_page,
     )
@@ -176,12 +192,17 @@ async def update_journal_entry(
 ):
     """Update a journal entry"""
     try:
+        # Get the entry before update to check draft status transition
+        old_entry = await journal_service.get_entry(db, entry_id, current_user.id)
+        was_draft = old_entry.is_draft
+
         entry = await journal_service.update_entry(
             db=db,
             entry_id=entry_id,
             user_id=current_user.id,
             raw_text=data.raw_text,
             mood=data.mood.value if data.mood else None,
+            is_draft=data.is_draft,
         )
     except ValueError as e:
         raise HTTPException(
@@ -189,11 +210,28 @@ async def update_journal_entry(
             detail=str(e),
         )
 
-    # Re-analyze if text changed
-    if data.raw_text is not None:
-        # Commit now so the background task's independent session can see the update
-        await db.commit()
-        background_tasks.add_task(process_journal_ai, entry_id, current_user.id, data.raw_text)
+    # Commit so background task can see updates
+    await db.commit()
+
+    # Draft finalized → trigger streak + SoulBar + AI
+    if was_draft and data.is_draft is False:
+        async with async_session_maker() as side_db:
+            try:
+                await streak_service.record_journal_entry(side_db, current_user.id)
+                await soul_bar_service.add_point(side_db, current_user.id)
+                await side_db.commit()
+            except Exception as e:
+                await side_db.rollback()
+                logger.error(f"[Journal] Streak/SoulBar update failed: {e}")
+
+        background_tasks.add_task(
+            process_journal_ai, entry_id, current_user.id, entry.raw_text
+        )
+    elif not was_draft and data.raw_text is not None:
+        # Text changed on non-draft: re-trigger AI only (streak/SoulBar already counted)
+        background_tasks.add_task(
+            process_journal_ai, entry_id, current_user.id, data.raw_text
+        )
 
     return _entry_response(entry)
 

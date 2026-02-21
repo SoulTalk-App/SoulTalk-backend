@@ -9,16 +9,24 @@ class MoodEnum(str, Enum):
     sad = "Sad"
     mad = "Mad"
     normal = "Normal"
+    chill = "Chill"
+    vibing = "Vibing"
+    lost = "Lost"
+    tired = "Tired"
+    sexy = "Sexy"
+    fire = "Fire"
 
 
 class JournalEntryCreate(BaseModel):
     raw_text: str = Field(..., min_length=1, max_length=5000)
     mood: Optional[MoodEnum] = None
+    is_draft: bool = False
 
 
 class JournalEntryUpdate(BaseModel):
     raw_text: Optional[str] = Field(None, min_length=1, max_length=5000)
     mood: Optional[MoodEnum] = None
+    is_draft: Optional[bool] = None
 
 
 class JournalEntryResponse(BaseModel):
@@ -35,6 +43,7 @@ class JournalEntryResponse(BaseModel):
     time_focus: Optional[str] = None
     ai_response: Optional[str] = None
     is_ai_processed: bool = False
+    is_draft: bool = False
     created_at: datetime
     updated_at: datetime
 

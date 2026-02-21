@@ -4,6 +4,8 @@ from app.models.refresh_token import RefreshToken
 from app.models.email_verification import EmailVerificationToken
 from app.models.journal_entry import JournalEntry
 from app.models.daily_mood import DailyMood
+from app.models.user_streak import UserStreak
+from app.models.soul_bar import SoulBar
 
 __all__ = [
     "User",
@@ -13,4 +15,6 @@ __all__ = [
     "EmailVerificationToken",
     "JournalEntry",
     "DailyMood",
+    "UserStreak",
+    "SoulBar",
 ]

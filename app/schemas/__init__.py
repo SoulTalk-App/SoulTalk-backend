@@ -21,6 +21,9 @@ from app.schemas.journal import (
     JournalEntryResponse,
     JournalEntryListResponse,
 )
+from app.schemas.streak import StreakResponse
+from app.schemas.soul_bar import SoulBarResponse
+from app.schemas.transcription import TranscriptionResponse
 
 __all__ = [
     "UserRegistration",
@@ -40,4 +43,7 @@ __all__ = [
     "JournalEntryUpdate",
     "JournalEntryResponse",
     "JournalEntryListResponse",
+    "StreakResponse",
+    "SoulBarResponse",
+    "TranscriptionResponse",
 ]

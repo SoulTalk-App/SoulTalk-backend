@@ -14,11 +14,13 @@ class JournalService:
         user_id: uuid.UUID,
         raw_text: str,
         mood: Optional[str] = None,
+        is_draft: bool = False,
     ) -> JournalEntry:
         entry = JournalEntry(
             user_id=user_id,
             raw_text=raw_text,
             mood=mood,
+            is_draft=is_draft,
         )
         db.add(entry)
         await db.flush()
@@ -50,12 +52,16 @@ class JournalService:
         month: Optional[int] = None,
         mood: Optional[str] = None,
         is_ai_processed: Optional[bool] = None,
+        is_draft: Optional[bool] = False,
         page: int = 1,
         per_page: int = 20,
     ) -> Tuple[List[JournalEntry], int]:
         query = select(JournalEntry).where(JournalEntry.user_id == user_id)
         count_query = select(func.count(JournalEntry.id)).where(JournalEntry.user_id == user_id)
 
+        if is_draft is not None:
+            query = query.where(JournalEntry.is_draft == is_draft)
+            count_query = count_query.where(JournalEntry.is_draft == is_draft)
         if year is not None:
             query = query.where(extract("year", JournalEntry.created_at) == year)
             count_query = count_query.where(extract("year", JournalEntry.created_at) == year)
@@ -88,6 +94,7 @@ class JournalService:
         user_id: uuid.UUID,
         raw_text: Optional[str] = None,
         mood: Optional[str] = None,
+        is_draft: Optional[bool] = None,
     ) -> JournalEntry:
         entry = await self.get_entry(db, entry_id, user_id)
 
@@ -106,6 +113,8 @@ class JournalService:
             entry.is_ai_processed = False
         if mood is not None:
             entry.mood = mood
+        if is_draft is not None:
+            entry.is_draft = is_draft
 
         entry.updated_at = datetime.now(timezone.utc)
         await db.flush()
