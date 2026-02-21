@@ -3,11 +3,11 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
 
 PASSWORD_PATTERN = re.compile(
-    r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])'
+    r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9])'
 )
 PASSWORD_ERROR = (
     "Password must contain at least one uppercase letter, "
-    "one lowercase letter, one digit, and one special character (!@#$%^&*)"
+    "one lowercase letter, one digit, and one special character"
 )
 
 
@@ -44,6 +44,16 @@ class PasswordReset(BaseModel):
 
 class NewPasswordRequest(BaseModel):
     token: str
+    new_password: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator('new_password')
+    @classmethod
+    def check_password_complexity(cls, v: str) -> str:
+        return validate_password_complexity(v)
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
     new_password: str = Field(..., min_length=8, max_length=128)
 
     @field_validator('new_password')

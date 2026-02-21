@@ -247,6 +247,10 @@ class AuthService:
             # Don't reveal whether email exists
             return None
 
+        # Social-only users (Google/Facebook) have no password to reset
+        if not user.password_hash:
+            raise ValueError("social_auth_only")
+
         # Create reset token
         raw_token, token_hash = jwt_service.create_verification_token()
         expires_at = datetime.now(timezone.utc) + timedelta(
@@ -360,6 +364,27 @@ class AuthService:
         )
 
         return True
+
+    async def change_password(
+        self,
+        db: AsyncSession,
+        user: User,
+        current_password: str,
+        new_password: str
+    ) -> User:
+        """Change password for a logged-in email user"""
+        if not user.password_hash:
+            raise ValueError("No password set. You signed up with a social provider.")
+
+        if not await self.user_service.verify_password(user, current_password):
+            raise ValueError("Current password is incorrect")
+
+        await self.user_service.set_password(db, user, new_password)
+
+        # Revoke all refresh tokens — forces re-login on all devices
+        await self.logout_all_devices(db, user.id)
+
+        return user
 
     async def set_password_for_social_user(
         self,

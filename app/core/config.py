@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     # Frontend URL (for email links)
     FRONTEND_URL: str = "http://localhost:19006"
 
+    # Backend public URL (for email redirect links)
+    BACKEND_PUBLIC_URL: str = "http://localhost:8000"
+
     # Email verification token expiry (in hours)
     EMAIL_VERIFICATION_EXPIRE_HOURS: int = 24
     PASSWORD_RESET_EXPIRE_HOURS: int = 1

@@ -128,7 +128,7 @@ class EmailService:
         token: str
     ) -> bool:
         """Send password reset email"""
-        reset_url = f"{self.frontend_url}/reset-password?token={token}"
+        reset_url = f"{settings.BACKEND_PUBLIC_URL}/api/auth/reset-password/{token}/open"
 
         subject = "Reset your SoulTalk password"
 

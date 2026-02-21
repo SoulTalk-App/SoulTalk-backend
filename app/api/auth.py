@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, status, Request, Query
+from fastapi.responses import HTMLResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Dict
@@ -15,6 +16,7 @@ from app.schemas.auth import (
     TokenRefresh,
     PasswordReset,
     NewPasswordRequest,
+    ChangePasswordRequest,
     SetPasswordRequest,
     AuthResponse,
     VerifyOTPRequest,
@@ -226,8 +228,15 @@ async def request_password_reset(
     db: AsyncSession = Depends(get_db)
 ):
     """Send password reset email"""
-    # Always return same message for security (don't reveal if email exists)
-    await auth_service.request_password_reset(db, reset_data.email)
+    try:
+        await auth_service.request_password_reset(db, reset_data.email)
+    except ValueError as e:
+        if str(e) == "social_auth_only":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This account was created using Google or Facebook. Please sign in using your original method."
+            )
+        raise
     return MessageResponse(
         message="If the email exists, a password reset link has been sent"
     )
@@ -251,6 +260,30 @@ async def confirm_password_reset(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+
+
+@router.get("/reset-password/{token}/open", response_class=HTMLResponse)
+async def open_reset_password_in_app(token: str):
+    """Redirect browser to the app's deep link for password reset"""
+    deep_link = f"soultalk://reset-password/{token}"
+    return HTMLResponse(f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>SoulTalk — Resetting Password</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body {{ font-family: -apple-system, sans-serif; text-align: center; padding: 60px 24px; background: #59168B; color: #fff; }}
+  a {{ color: #fff; font-weight: 600; font-size: 18px; background: rgba(255,255,255,0.2); padding: 14px 28px; border-radius: 12px; text-decoration: none; display: inline-block; margin-top: 20px; }}
+</style>
+</head>
+<body>
+<h2>Opening SoulTalk…</h2>
+<p>If the app didn't open automatically, tap the button below.</p>
+<a href="{deep_link}">Open in SoulTalk</a>
+<script>window.location = "{deep_link}";</script>
+</body>
+</html>""")
 
 
 @router.post("/verify-email", response_model=AuthResponse)
@@ -314,6 +347,28 @@ async def check_username(
     )
     existing = result.scalar_one_or_none()
     return {"available": existing is None}
+
+
+@router.post("/change-password", response_model=MessageResponse)
+async def change_password(
+    data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Change password for logged-in email users"""
+    try:
+        await auth_service.change_password(
+            db=db,
+            user=current_user,
+            current_password=data.current_password,
+            new_password=data.new_password
+        )
+        return MessageResponse(message="Password changed successfully")
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
 
 @router.post("/set-password", response_model=MessageResponse)
