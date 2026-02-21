@@ -40,6 +40,10 @@ class User(Base):
         String(100),
         nullable=False
     )
+    display_first_name: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True  # Initially copied from first_name, editable by user
+    )
     display_name: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True

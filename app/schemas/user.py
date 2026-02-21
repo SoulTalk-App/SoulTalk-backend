@@ -9,6 +9,7 @@ class UserResponse(BaseModel):
     email: str
     first_name: str
     last_name: str
+    display_first_name: Optional[str] = None
     display_name: Optional[str] = None
     username: Optional[str] = None
     bio: Optional[str] = None
@@ -22,8 +23,7 @@ class UserResponse(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    display_first_name: Optional[str] = Field(None, min_length=1, max_length=100)
     display_name: Optional[str] = None
     username: Optional[str] = Field(None, min_length=2, max_length=50, pattern=r'^[a-zA-Z0-9_]+$')
     bio: Optional[str] = Field(None, max_length=200)
@@ -44,6 +44,7 @@ class UserProfileResponse(BaseModel):
     email: str
     first_name: str
     last_name: str
+    display_first_name: Optional[str] = None
     display_name: Optional[str] = None
     username: Optional[str] = None
     bio: Optional[str] = None

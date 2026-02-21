@@ -30,6 +30,7 @@ class UserService:
             password_hash=password_hash,
             first_name=first_name,
             last_name=last_name,
+            display_first_name=first_name,
             email_verified=email_verified
         )
 

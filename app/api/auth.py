@@ -156,6 +156,7 @@ async def get_user_profile(
         email=current_user.email,
         first_name=current_user.first_name,
         last_name=current_user.last_name,
+        display_first_name=current_user.display_first_name,
         display_name=current_user.display_name,
         username=current_user.username,
         bio=current_user.bio,
@@ -180,8 +181,13 @@ async def update_user_profile(
             detail="No fields to update"
         )
 
-    # Check username uniqueness if being changed
+    # Username can only be set once — block changes if already set
     if "username" in update_fields and update_fields["username"] is not None:
+        if current_user.username is not None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username can only be set once"
+            )
         existing = await db.execute(
             select(User).where(
                 User.username == update_fields["username"],
@@ -202,6 +208,7 @@ async def update_user_profile(
         email=user.email,
         first_name=user.first_name,
         last_name=user.last_name,
+        display_first_name=user.display_first_name,
         display_name=user.display_name,
         username=user.username,
         bio=user.bio,
