@@ -19,36 +19,51 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Create user_streaks table
-    op.create_table(
-        'user_streaks',
-        sa.Column('id', UUID(as_uuid=True), primary_key=True),
-        sa.Column('user_id', UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('current_streak', sa.Integer(), nullable=False, server_default='0'),
-        sa.Column('longest_streak', sa.Integer(), nullable=False, server_default='0'),
-        sa.Column('last_journal_date', sa.Date(), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-    )
-    op.create_index('ix_user_streaks_user_id', 'user_streaks', ['user_id'])
-    op.create_unique_constraint('uq_user_streaks_user_id', 'user_streaks', ['user_id'])
+    # Create user_streaks table (IF NOT EXISTS for idempotency)
+    op.execute(sa.text(
+        "CREATE TABLE IF NOT EXISTS user_streaks ("
+        "id UUID PRIMARY KEY, "
+        "user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, "
+        "current_streak INTEGER NOT NULL DEFAULT 0, "
+        "longest_streak INTEGER NOT NULL DEFAULT 0, "
+        "last_journal_date DATE, "
+        "created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "
+        "updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now())"
+    ))
+    op.execute(sa.text("CREATE INDEX IF NOT EXISTS ix_user_streaks_user_id ON user_streaks (user_id)"))
+    op.execute(sa.text(
+        "DO $body$ BEGIN "
+        "ALTER TABLE user_streaks ADD CONSTRAINT uq_user_streaks_user_id UNIQUE (user_id); "
+        "EXCEPTION WHEN duplicate_object THEN NULL; "
+        "END $body$"
+    ))
 
-    # Create soul_bars table
-    op.create_table(
-        'soul_bars',
-        sa.Column('id', UUID(as_uuid=True), primary_key=True),
-        sa.Column('user_id', UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('points', sa.Integer(), nullable=False, server_default='0'),
-        sa.Column('total_filled', sa.Integer(), nullable=False, server_default='0'),
-        sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-    )
-    op.create_index('ix_soul_bars_user_id', 'soul_bars', ['user_id'])
-    op.create_unique_constraint('uq_soul_bars_user_id', 'soul_bars', ['user_id'])
+    # Create soul_bars table (IF NOT EXISTS for idempotency)
+    op.execute(sa.text(
+        "CREATE TABLE IF NOT EXISTS soul_bars ("
+        "id UUID PRIMARY KEY, "
+        "user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, "
+        "points INTEGER NOT NULL DEFAULT 0, "
+        "total_filled INTEGER NOT NULL DEFAULT 0, "
+        "created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "
+        "updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now())"
+    ))
+    op.execute(sa.text("CREATE INDEX IF NOT EXISTS ix_soul_bars_user_id ON soul_bars (user_id)"))
+    op.execute(sa.text(
+        "DO $body$ BEGIN "
+        "ALTER TABLE soul_bars ADD CONSTRAINT uq_soul_bars_user_id UNIQUE (user_id); "
+        "EXCEPTION WHEN duplicate_object THEN NULL; "
+        "END $body$"
+    ))
 
-    # Add is_draft column to journal_entries
-    op.add_column('journal_entries', sa.Column('is_draft', sa.Boolean(), nullable=False, server_default=sa.text('false')))
-    op.create_index('ix_journal_entries_is_draft', 'journal_entries', ['is_draft'])
+    # Add is_draft column to journal_entries (IF NOT EXISTS)
+    op.execute(sa.text(
+        "DO $body$ BEGIN "
+        "ALTER TABLE journal_entries ADD COLUMN is_draft BOOLEAN NOT NULL DEFAULT false; "
+        "EXCEPTION WHEN duplicate_column THEN NULL; "
+        "END $body$"
+    ))
+    op.execute(sa.text("CREATE INDEX IF NOT EXISTS ix_journal_entries_is_draft ON journal_entries (is_draft)"))
 
 
 def downgrade() -> None:

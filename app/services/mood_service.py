@@ -13,7 +13,9 @@ class MoodService:
         db: AsyncSession,
         user_id: uuid.UUID,
         filled_count: int,
-    ) -> DailyMood:
+    ) -> tuple[DailyMood, bool]:
+        """Returns (mood, is_first_fill) — is_first_fill is True when mood bar
+        is being filled for the first time today (row didn't exist or was 0)."""
         today = date.today()
         result = await db.execute(
             select(DailyMood).where(
@@ -23,10 +25,14 @@ class MoodService:
         )
         mood = result.scalar_one_or_none()
 
+        is_first_fill = False
         if mood:
+            if mood.filled_count == 0 and filled_count > 0:
+                is_first_fill = True
             mood.filled_count = filled_count
             mood.updated_at = datetime.now(timezone.utc)
         else:
+            is_first_fill = filled_count > 0
             mood = DailyMood(
                 user_id=user_id,
                 date=today,
@@ -36,7 +42,7 @@ class MoodService:
 
         await db.flush()
         await db.refresh(mood)
-        return mood
+        return mood, is_first_fill
 
     async def get_daily_mood(
         self,

@@ -1,13 +1,25 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 from typing import Optional, Tuple, List
-from sqlalchemy import select, func, extract
+from sqlalchemy import select, func, extract, cast, Date
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.journal_entry import JournalEntry
 
 
 class JournalService:
+    async def has_entry_today(self, db: AsyncSession, user_id: uuid.UUID) -> bool:
+        """Check if the user already has a non-draft journal entry created today (UTC)."""
+        today = date.today()
+        result = await db.execute(
+            select(func.count(JournalEntry.id)).where(
+                JournalEntry.user_id == user_id,
+                JournalEntry.is_draft == False,
+                cast(JournalEntry.created_at, Date) == today,
+            )
+        )
+        return (result.scalar() or 0) > 0
+
     async def create_entry(
         self,
         db: AsyncSession,

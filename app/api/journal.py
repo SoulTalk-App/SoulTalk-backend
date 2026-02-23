@@ -106,6 +106,14 @@ async def create_journal_entry(
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new journal entry"""
+    # Enforce 1 non-draft entry per day
+    if not data.is_draft:
+        if await journal_service.has_entry_today(db, current_user.id):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="You have already journaled today. Come back tomorrow!",
+            )
+
     entry = await journal_service.create_entry(
         db=db,
         user_id=current_user.id,
@@ -168,6 +176,7 @@ async def list_journal_entries(
 @router.get("/{entry_id}", response_model=JournalEntryResponse)
 async def get_journal_entry(
     entry_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -179,6 +188,11 @@ async def get_journal_entry(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
         )
+
+    # Re-trigger AI if it failed previously
+    if not entry.is_ai_processed and not entry.is_draft:
+        background_tasks.add_task(process_journal_ai, entry.id, current_user.id, entry.raw_text)
+
     return _entry_response(entry)
 
 
@@ -195,6 +209,14 @@ async def update_journal_entry(
         # Get the entry before update to check draft status transition
         old_entry = await journal_service.get_entry(db, entry_id, current_user.id)
         was_draft = old_entry.is_draft
+
+        # Enforce 1 non-draft entry per day when finalizing a draft
+        if was_draft and data.is_draft is False:
+            if await journal_service.has_entry_today(db, current_user.id):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="You have already journaled today. Come back tomorrow!",
+                )
 
         entry = await journal_service.update_entry(
             db=db,

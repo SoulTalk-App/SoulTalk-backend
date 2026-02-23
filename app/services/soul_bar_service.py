@@ -19,12 +19,12 @@ class SoulBarService:
             await db.refresh(bar)
         return bar
 
-    async def add_point(self, db: AsyncSession, user_id: uuid.UUID) -> SoulBar:
+    async def add_point(self, db: AsyncSession, user_id: uuid.UUID, amount: float = 1.0) -> SoulBar:
         bar = await self.get_or_create(db, user_id)
-        bar.points += 1
+        bar.points += amount
         if bar.points >= 6:
             bar.total_filled += 1
-            bar.points = 0
+            bar.points = 0.0
         bar.updated_at = datetime.now(timezone.utc)
         await db.flush()
         await db.refresh(bar)

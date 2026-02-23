@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Integer, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Integer, Float, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from typing import TYPE_CHECKING
@@ -28,9 +28,9 @@ class SoulBar(Base):
         nullable=False,
         index=True
     )
-    points: Mapped[int] = mapped_column(
-        Integer,
-        default=0
+    points: Mapped[float] = mapped_column(
+        Float,
+        default=0.0
     )
     total_filled: Mapped[int] = mapped_column(
         Integer,
