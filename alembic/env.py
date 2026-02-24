@@ -11,6 +11,9 @@ from alembic import context
 from app.core.config import settings
 from app.db.base import Base
 from app.models import User, SocialAccount, RefreshToken, EmailVerificationToken, JournalEntry
+from app.models.daily_mood import DailyMood
+from app.models.user_streak import UserStreak
+from app.models.soul_bar import SoulBar
 
 # this is the Alembic Config object
 config = context.config

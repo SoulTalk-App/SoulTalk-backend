@@ -62,8 +62,14 @@ class AIService:
             max_tokens=600,
         )
 
+        if not response.choices:
+            raise ValueError("OpenAI returned no choices")
+
         content = response.choices[0].message.content
-        logger.info(f"[AI] Raw OpenAI response length: {len(content) if content else 0}")
+        if not content:
+            raise ValueError("OpenAI returned empty content")
+
+        logger.info(f"[AI] Raw OpenAI response length: {len(content)}")
         data = json.loads(content)
         return JournalAnalysis(**data)
 
