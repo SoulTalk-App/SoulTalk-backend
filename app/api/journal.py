@@ -49,11 +49,11 @@ def _entry_response(entry) -> JournalEntryResponse:
 
 
 async def process_journal_ai(entry_id: uuid.UUID, user_id: uuid.UUID, raw_text: str):
-    """Background task: analyze journal entry via OpenAI and push result via WebSocket."""
+    """Background task: analyze journal entry via Anthropic and push result via WebSocket."""
     logger.info(f"[AI] Starting analysis for entry {entry_id}")
     try:
         analysis = await ai_service.analyze_journal_entry(raw_text)
-        logger.info(f"[AI] OpenAI analysis complete for entry {entry_id}")
+        logger.info(f"[AI] Anthropic analysis complete for entry {entry_id}")
 
         async with async_session_maker() as db:
             try:
