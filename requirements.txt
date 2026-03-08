@@ -19,6 +19,11 @@ aiofiles==23.2.1
 
 # AI / Anthropic
 anthropic>=0.42.0
+voyageai>=0.3.0
+
+# Vector search
+pgvector>=0.3.0
+numpy>=1.26.0
 
 # Social authentication
 google-auth==2.25.0
