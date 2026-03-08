@@ -3,7 +3,7 @@ import logging
 from typing import Optional, List
 
 from pydantic import BaseModel, Field
-from openai import AsyncOpenAI
+from anthropic import AsyncAnthropic
 
 from app.core.config import settings
 
@@ -40,30 +40,35 @@ class JournalAnalysis(BaseModel):
 
 class AIService:
     def __init__(self):
-        self._client: Optional[AsyncOpenAI] = None
+        self._client: Optional[AsyncAnthropic] = None
 
     @property
-    def client(self) -> AsyncOpenAI:
+    def client(self) -> AsyncAnthropic:
         if self._client is None:
-            if not settings.OPENAI_API_KEY:
-                raise RuntimeError("OPENAI_API_KEY is not configured")
-            self._client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+            if not settings.ANTHROPIC_API_KEY:
+                raise RuntimeError("ANTHROPIC_API_KEY is not configured")
+            self._client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
         return self._client
 
     async def analyze_journal_entry(self, raw_text: str) -> JournalAnalysis:
-        response = await self.client.chat.completions.create(
-            model=settings.OPENAI_MODEL,
-            response_format={"type": "json_object"},
+        response = await self.client.messages.create(
+            model=settings.ANTHROPIC_MODEL,
+            max_tokens=600,
+            system=SYSTEM_PROMPT,
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": raw_text},
             ],
             temperature=0.7,
-            max_tokens=600,
         )
 
-        content = response.choices[0].message.content
-        logger.info(f"[AI] Raw OpenAI response length: {len(content) if content else 0}")
+        if not response.content:
+            raise ValueError("Anthropic returned no content")
+
+        content = response.content[0].text
+        if not content:
+            raise ValueError("Anthropic returned empty content")
+
+        logger.info(f"[AI] Raw Anthropic response length: {len(content)}")
         data = json.loads(content)
         return JournalAnalysis(**data)
 

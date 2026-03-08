@@ -29,20 +29,45 @@ class JournalEntryUpdate(BaseModel):
     is_draft: Optional[bool] = None
 
 
-class JournalEntryResponse(BaseModel):
-    id: str
-    raw_text: str
-    mood: Optional[str] = None
+class TagsSummary(BaseModel):
     emotion_primary: Optional[str] = None
     emotion_secondary: Optional[str] = None
     emotion_intensity: Optional[int] = None
     nervous_system_state: Optional[str] = None
-    topics: Optional[list] = None
-    coping_mechanisms: Optional[list] = None
+    topics: Optional[List[str]] = None
+    coping_mechanisms: Optional[List[str]] = None
     self_talk_style: Optional[str] = None
-    time_focus: Optional[str] = None
-    ai_response: Optional[str] = None
-    is_ai_processed: bool = False
+    crisis_flag: bool = False
+
+    model_config = {"from_attributes": True}
+
+
+class AIResponseSummary(BaseModel):
+    text: Optional[str] = None
+    mode: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+class JournalEntryResponse(BaseModel):
+    id: str
+    raw_text: str
+    mood: Optional[str] = None
+    ai_processing_status: str = "none"
+    is_draft: bool = False
+    created_at: datetime
+    updated_at: datetime
+    tags: Optional[TagsSummary] = None
+    ai_response: Optional[AIResponseSummary] = None
+
+    model_config = {"from_attributes": True}
+
+
+class JournalEntryListItem(BaseModel):
+    id: str
+    raw_text: str
+    mood: Optional[str] = None
+    ai_processing_status: str = "none"
     is_draft: bool = False
     created_at: datetime
     updated_at: datetime
@@ -51,7 +76,7 @@ class JournalEntryResponse(BaseModel):
 
 
 class JournalEntryListResponse(BaseModel):
-    entries: List[JournalEntryResponse]
+    entries: List[JournalEntryListItem]
     total: int
     page: int
     per_page: int

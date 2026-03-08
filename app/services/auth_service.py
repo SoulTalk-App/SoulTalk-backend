@@ -71,7 +71,7 @@ class AuthService:
         )
         db.add(verification)
 
-        logger.info(f"OTP code for {email}: {otp_code}")
+        logger.info(f"OTP generated for {email}")
 
         # Send verification email
         await email_service.send_verification_email(
@@ -354,7 +354,7 @@ class AuthService:
         )
         db.add(verification)
 
-        logger.info(f"OTP code for {email}: {otp_code}")
+        logger.info(f"OTP generated for {email}")
 
         # Send email
         await email_service.send_verification_email(

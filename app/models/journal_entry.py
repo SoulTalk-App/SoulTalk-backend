@@ -1,14 +1,16 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import String, Boolean, Integer, Text, DateTime, ForeignKey
+from sqlalchemy import String, Boolean, Text, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID, JSON
-from typing import Optional, List, TYPE_CHECKING
+from sqlalchemy.dialects.postgresql import UUID
+from typing import Optional, TYPE_CHECKING
 
 from app.db.base import Base
 
 if TYPE_CHECKING:
     from app.models.user import User
+    from app.models.entry_tags import EntryTags
+    from app.models.ai_response import AIResponse
 
 
 class JournalEntry(Base):
@@ -33,45 +35,18 @@ class JournalEntry(Base):
         String(20),
         nullable=True
     )
-    emotion_primary: Mapped[Optional[str]] = mapped_column(
-        String(50),
-        nullable=True
-    )
-    emotion_secondary: Mapped[Optional[str]] = mapped_column(
-        String(50),
-        nullable=True
-    )
-    emotion_intensity: Mapped[Optional[int]] = mapped_column(
-        Integer,
-        nullable=True
-    )
-    nervous_system_state: Mapped[Optional[str]] = mapped_column(
-        String(50),
-        nullable=True
-    )
-    topics: Mapped[Optional[list]] = mapped_column(
-        JSON,
-        nullable=True
-    )
-    coping_mechanisms: Mapped[Optional[list]] = mapped_column(
-        JSON,
-        nullable=True
-    )
-    self_talk_style: Mapped[Optional[str]] = mapped_column(
-        String(50),
-        nullable=True
-    )
-    time_focus: Mapped[Optional[str]] = mapped_column(
+    ai_processing_status: Mapped[str] = mapped_column(
         String(20),
-        nullable=True
+        nullable=False,
+        default="none"
     )
-    ai_response: Mapped[Optional[str]] = mapped_column(
+    ai_processing_error: Mapped[Optional[str]] = mapped_column(
         Text,
         nullable=True
     )
-    is_ai_processed: Mapped[bool] = mapped_column(
-        Boolean,
-        default=False
+    ai_processing_started_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
     )
     is_draft: Mapped[bool] = mapped_column(
         Boolean,
@@ -92,4 +67,16 @@ class JournalEntry(Base):
     user: Mapped["User"] = relationship(
         "User",
         back_populates="journal_entries"
+    )
+    entry_tags: Mapped[Optional["EntryTags"]] = relationship(
+        "EntryTags",
+        back_populates="journal_entry",
+        uselist=False,
+        cascade="all, delete-orphan"
+    )
+    ai_response: Mapped[Optional["AIResponse"]] = relationship(
+        "AIResponse",
+        back_populates="journal_entry",
+        uselist=False,
+        cascade="all, delete-orphan"
     )

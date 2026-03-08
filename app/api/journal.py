@@ -11,13 +11,13 @@ from app.api.deps import get_current_active_user
 from app.services.journal_service import JournalService
 from app.services.streak_service import streak_service
 from app.services.soul_bar_service import soul_bar_service
-from app.services.ai_service import ai_service
 from app.api.ws import connection_manager
 from app.models.user import User
 from app.schemas.journal import (
     JournalEntryCreate,
     JournalEntryUpdate,
     JournalEntryResponse,
+    JournalEntryListItem,
     JournalEntryListResponse,
 )
 
@@ -32,16 +32,19 @@ def _entry_response(entry) -> JournalEntryResponse:
         id=str(entry.id),
         raw_text=entry.raw_text,
         mood=entry.mood,
-        emotion_primary=entry.emotion_primary,
-        emotion_secondary=entry.emotion_secondary,
-        emotion_intensity=entry.emotion_intensity,
-        nervous_system_state=entry.nervous_system_state,
-        topics=entry.topics,
-        coping_mechanisms=entry.coping_mechanisms,
-        self_talk_style=entry.self_talk_style,
-        time_focus=entry.time_focus,
-        ai_response=entry.ai_response,
-        is_ai_processed=entry.is_ai_processed,
+        ai_processing_status=entry.ai_processing_status,
+        is_draft=entry.is_draft,
+        created_at=entry.created_at,
+        updated_at=entry.updated_at,
+    )
+
+
+def _entry_list_item(entry) -> JournalEntryListItem:
+    return JournalEntryListItem(
+        id=str(entry.id),
+        raw_text=entry.raw_text,
+        mood=entry.mood,
+        ai_processing_status=entry.ai_processing_status,
         is_draft=entry.is_draft,
         created_at=entry.created_at,
         updated_at=entry.updated_at,
@@ -49,50 +52,21 @@ def _entry_response(entry) -> JournalEntryResponse:
 
 
 async def process_journal_ai(entry_id: uuid.UUID, user_id: uuid.UUID, raw_text: str):
-    """Background task: analyze journal entry via OpenAI and push result via WebSocket."""
-    logger.info(f"[AI] Starting analysis for entry {entry_id}")
-    try:
-        analysis = await ai_service.analyze_journal_entry(raw_text)
-        logger.info(f"[AI] OpenAI analysis complete for entry {entry_id}")
+    """Background task: placeholder for AI pipeline (Phase 3).
 
+    Currently just sets status to pending. The full pipeline
+    (tag → embed → mode select → retrieve → respond) will be
+    wired here once the AI services are built.
+    """
+    logger.info(f"[AI] Pipeline triggered for entry {entry_id} (not yet implemented)")
+    try:
         async with async_session_maker() as db:
             try:
-                entry = await journal_service.update_ai_fields(
-                    db=db,
-                    entry_id=entry_id,
-                    emotion_primary=analysis.emotion_primary,
-                    emotion_secondary=analysis.emotion_secondary,
-                    emotion_intensity=analysis.emotion_intensity,
-                    nervous_system_state=analysis.nervous_system_state,
-                    topics=analysis.topics,
-                    coping_mechanisms=analysis.coping_mechanisms,
-                    self_talk_style=analysis.self_talk_style,
-                    time_focus=analysis.time_focus,
-                    ai_response=analysis.ai_response,
-                )
+                await journal_service.set_processing_status(db, entry_id, "pending")
                 await db.commit()
-                logger.info(f"[AI] DB commit successful for entry {entry_id}, is_ai_processed={entry.is_ai_processed}")
-
-                # Push to mobile via WebSocket
-                await connection_manager.send_to_user(str(user_id), {
-                    "event": "journal_ai_complete",
-                    "entry_id": str(entry_id),
-                    "emotion_primary": analysis.emotion_primary,
-                    "emotion_secondary": analysis.emotion_secondary,
-                    "emotion_intensity": analysis.emotion_intensity,
-                    "nervous_system_state": analysis.nervous_system_state,
-                    "topics": analysis.topics,
-                    "coping_mechanisms": analysis.coping_mechanisms,
-                    "self_talk_style": analysis.self_talk_style,
-                    "time_focus": analysis.time_focus,
-                    "ai_response": analysis.ai_response,
-                    "is_ai_processed": True,
-                })
-                logger.info(f"[AI] WebSocket notification sent for entry {entry_id}")
             except Exception:
                 await db.rollback()
                 raise
-
     except Exception as e:
         logger.error(f"[AI] Processing FAILED for entry {entry_id}: {type(e).__name__}: {e}")
         logger.error(f"[AI] Traceback: {traceback.format_exc()}")
@@ -146,27 +120,27 @@ async def list_journal_entries(
     year: Optional[int] = Query(None),
     month: Optional[int] = Query(None, ge=1, le=12),
     mood: Optional[str] = Query(None),
-    is_ai_processed: Optional[bool] = Query(None),
+    ai_processing_status: Optional[str] = Query(None),
     is_draft: Optional[bool] = Query(False),
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """List journal entries with optional year/month/mood/reflected/draft filtering"""
+    """List journal entries with optional filtering"""
     entries, total = await journal_service.list_entries(
         db=db,
         user_id=current_user.id,
         year=year,
         month=month,
         mood=mood,
-        is_ai_processed=is_ai_processed,
+        ai_processing_status=ai_processing_status,
         is_draft=is_draft,
         page=page,
         per_page=per_page,
     )
     return JournalEntryListResponse(
-        entries=[_entry_response(e) for e in entries],
+        entries=[_entry_list_item(e) for e in entries],
         total=total,
         page=page,
         per_page=per_page,
@@ -189,8 +163,8 @@ async def get_journal_entry(
             detail=str(e),
         )
 
-    # Re-trigger AI if it failed previously
-    if not entry.is_ai_processed and not entry.is_draft:
+    # Re-trigger AI if it failed or is stuck pending
+    if entry.ai_processing_status in ("failed", "none") and not entry.is_draft:
         background_tasks.add_task(process_journal_ai, entry.id, current_user.id, entry.raw_text)
 
     return _entry_response(entry)

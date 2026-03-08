@@ -56,19 +56,25 @@ async def websocket_endpoint(websocket: WebSocket):
     """
     await websocket.accept()
 
-    # Wait for auth token as first message
+    # Wait for auth token as first message (with timeout to prevent idle connections)
     try:
-        token = await websocket.receive_text()
+        token = await asyncio.wait_for(websocket.receive_text(), timeout=5.0)
+    except asyncio.TimeoutError:
+        logger.warning("WebSocket closed: auth token timeout")
+        await websocket.close(code=4001, reason="Auth timeout")
+        return
     except WebSocketDisconnect:
         return
 
     payload = jwt_service.decode_access_token(token)
     if not payload:
+        logger.warning("WebSocket closed: invalid token")
         await websocket.close(code=4001, reason="Invalid token")
         return
 
     user_id = payload.get("sub")
     if not user_id:
+        logger.warning("WebSocket closed: missing sub in token payload")
         await websocket.close(code=4001, reason="Invalid token payload")
         return
 
@@ -79,8 +85,8 @@ async def websocket_endpoint(websocket: WebSocket):
             while True:
                 await asyncio.sleep(PING_INTERVAL)
                 await websocket.send_json({"event": "ping"})
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"WebSocket ping stopped for user {user_id}: {e}")
 
     ping_task = asyncio.create_task(send_pings())
     try:

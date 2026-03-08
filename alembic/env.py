@@ -10,7 +10,11 @@ from alembic import context
 # Import settings and models
 from app.core.config import settings
 from app.db.base import Base
-from app.models import User, SocialAccount, RefreshToken, EmailVerificationToken, JournalEntry
+from app.models import (
+    User, SocialAccount, RefreshToken, EmailVerificationToken, JournalEntry,
+    DailyMood, UserStreak, SoulBar,
+    EntryTags, AIResponse, Soulsight, ScenarioPlaybook, DailyAggregate, UserAIProfile,
+)
 
 # this is the Alembic Config object
 config = context.config
