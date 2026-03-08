@@ -14,6 +14,7 @@ from app.api.soul_bar import router as soul_bar_router
 from app.api.transcription import router as transcription_router
 from app.api.prompts import router as prompts_router
 from app.api.ws import router as ws_router
+from app.api.ai_profile import router as ai_profile_router
 from app.db.session import engine
 from app.db.base import Base
 
@@ -79,6 +80,7 @@ app.include_router(streak_router, prefix="/api/streak", tags=["Streak"])
 app.include_router(soul_bar_router, prefix="/api/soul-bar", tags=["SoulBar"])
 app.include_router(transcription_router, prefix="/api/transcription", tags=["Transcription"])
 app.include_router(prompts_router, prefix="/api/prompts", tags=["Prompts"])
+app.include_router(ai_profile_router, prefix="/api/profile/ai-preferences", tags=["AI Profile"])
 app.include_router(ws_router, tags=["WebSocket"])
 
 
