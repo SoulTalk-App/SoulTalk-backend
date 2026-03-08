@@ -6,6 +6,12 @@ from app.models.journal_entry import JournalEntry
 from app.models.daily_mood import DailyMood
 from app.models.user_streak import UserStreak
 from app.models.soul_bar import SoulBar
+from app.models.entry_tags import EntryTags
+from app.models.ai_response import AIResponse
+from app.models.soulsight import Soulsight
+from app.models.scenario_playbook import ScenarioPlaybook
+from app.models.daily_aggregate import DailyAggregate
+from app.models.user_ai_profile import UserAIProfile
 
 __all__ = [
     "User",
@@ -17,4 +23,10 @@ __all__ = [
     "DailyMood",
     "UserStreak",
     "SoulBar",
+    "EntryTags",
+    "AIResponse",
+    "Soulsight",
+    "ScenarioPlaybook",
+    "DailyAggregate",
+    "UserAIProfile",
 ]
