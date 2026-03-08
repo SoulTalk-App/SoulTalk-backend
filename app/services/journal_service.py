@@ -63,7 +63,7 @@ class JournalService:
         year: Optional[int] = None,
         month: Optional[int] = None,
         mood: Optional[str] = None,
-        is_ai_processed: Optional[bool] = None,
+        ai_processing_status: Optional[str] = None,
         is_draft: Optional[bool] = False,
         page: int = 1,
         per_page: int = 20,
@@ -83,9 +83,9 @@ class JournalService:
         if mood is not None:
             query = query.where(JournalEntry.mood == mood)
             count_query = count_query.where(JournalEntry.mood == mood)
-        if is_ai_processed is not None:
-            query = query.where(JournalEntry.is_ai_processed == is_ai_processed)
-            count_query = count_query.where(JournalEntry.is_ai_processed == is_ai_processed)
+        if ai_processing_status is not None:
+            query = query.where(JournalEntry.ai_processing_status == ai_processing_status)
+            count_query = count_query.where(JournalEntry.ai_processing_status == ai_processing_status)
 
         # Get total count
         total_result = await db.execute(count_query)
@@ -112,17 +112,10 @@ class JournalService:
 
         if raw_text is not None:
             entry.raw_text = raw_text
-            # Reset AI fields so they get re-analyzed
-            entry.emotion_primary = None
-            entry.emotion_secondary = None
-            entry.emotion_intensity = None
-            entry.nervous_system_state = None
-            entry.topics = None
-            entry.coping_mechanisms = None
-            entry.self_talk_style = None
-            entry.time_focus = None
-            entry.ai_response = None
-            entry.is_ai_processed = False
+            # Reset processing status so pipeline re-runs
+            entry.ai_processing_status = "none"
+            entry.ai_processing_error = None
+            entry.ai_processing_started_at = None
         if mood is not None:
             entry.mood = mood
         if is_draft is not None:
@@ -133,21 +126,14 @@ class JournalService:
         await db.refresh(entry)
         return entry
 
-    async def update_ai_fields(
+    async def set_processing_status(
         self,
         db: AsyncSession,
         entry_id: uuid.UUID,
-        emotion_primary: Optional[str] = None,
-        emotion_secondary: Optional[str] = None,
-        emotion_intensity: Optional[int] = None,
-        nervous_system_state: Optional[str] = None,
-        topics: Optional[list] = None,
-        coping_mechanisms: Optional[list] = None,
-        self_talk_style: Optional[str] = None,
-        time_focus: Optional[str] = None,
-        ai_response: Optional[str] = None,
-    ) -> JournalEntry:
-        """Internal method to update AI analysis fields on a journal entry."""
+        status: str,
+        error: Optional[str] = None,
+    ) -> None:
+        """Update AI processing status on a journal entry."""
         result = await db.execute(
             select(JournalEntry).where(JournalEntry.id == entry_id)
         )
@@ -155,21 +141,12 @@ class JournalService:
         if not entry:
             raise ValueError("Journal entry not found")
 
-        entry.emotion_primary = emotion_primary
-        entry.emotion_secondary = emotion_secondary
-        entry.emotion_intensity = emotion_intensity
-        entry.nervous_system_state = nervous_system_state
-        entry.topics = topics
-        entry.coping_mechanisms = coping_mechanisms
-        entry.self_talk_style = self_talk_style
-        entry.time_focus = time_focus
-        entry.ai_response = ai_response
-        entry.is_ai_processed = True
+        entry.ai_processing_status = status
+        entry.ai_processing_error = error
+        if status == "pending":
+            entry.ai_processing_started_at = datetime.now(timezone.utc)
         entry.updated_at = datetime.now(timezone.utc)
-
         await db.flush()
-        await db.refresh(entry)
-        return entry
 
     async def delete_entry(
         self,
