@@ -1,0 +1,222 @@
+[
+  {
+    "id": "ST-SCEN-001",
+    "title": "Self-Surveillance Spiral",
+    "retrieval_tags": ["self_surveillance", "internal_performance_review", "insight_overload"],
+    "signals": "self_surveillance_present = true; internal_performance_review = medium or high; language includes should, fixing, optimizing, tracking myself constantly; exhaustion paired with high self-awareness",
+    "coaching_moves": "Name the organizing pattern first. Subtract pressure, reduce the number of steps. Reframe self-monitoring as a survival strategy that overextended. Offer containment and a single lever.",
+    "avoid_list": "Habit stacks, routines, more tracking. Motivational tone. Telling them to be more present as a task.",
+    "micro_actions": "2-minute no-notes check-in: what do I feel, what do I need. One permission statement: I do not need to manage myself right now. Choose one metric to ignore for 24 hours.",
+    "example_lines": "This reads like your self-awareness has turned into surveillance. That is exhausting.\nLet's reduce the internal management today, not add more tools.",
+    "priority": 30
+  },
+  {
+    "id": "ST-SCEN-002",
+    "title": "Continuity Fear and Momentum Dependence",
+    "retrieval_tags": ["continuity_fear", "momentum_dependence", "neurodivergent_support", "external_containers"],
+    "signals": "fear_of_forgetting_ideas = true; momentum_dependence = medium or high; user reports rushing to avoid losing thoughts; overwhelm rises when rest appears",
+    "coaching_moves": "Validate continuity fear as real and logical. Offer external containers: capture system, batching, scheduled idea dumps. Shift from internal recall to external reliability.",
+    "avoid_list": "Telling them to trust themselves more. Telling them to rest without giving a continuity plan.",
+    "micro_actions": "Create a single capture place: notes app pinned, one notebook, one voice memo inbox. Set a daily 5-minute idea dump time. \"Parking lot\" list for ideas that are not for today.",
+    "example_lines": "It's not that you fear rest. You fear losing what rest might interrupt.\nLet's build a container so your nervous system can stop gripping your ideas.",
+    "priority": 40
+  },
+  {
+    "id": "ST-SCEN-003",
+    "title": "Overwhelm and Too Many Tasks",
+    "retrieval_tags": ["overwhelm_mode", "task_spiral", "capacity_shift"],
+    "signals": "overwhelm_mode = medium or high; spiraling lists, urgency language; resentment toward even fun tasks",
+    "coaching_moves": "Triage into non-negotiable, negotiable, droppable. Choose one sacred yes and one sacred no. Normalize capacity shifts.",
+    "avoid_list": "Productivity systems. Long action plans.",
+    "micro_actions": "Write 3 columns: must, maybe, not today. Pick one tiny completion to create relief. Set a 15-minute stop time to prevent chaining.",
+    "example_lines": "Even fun becomes punishment when you are depleted. That is not a character flaw.\nLet's choose less on purpose, not as a collapse.",
+    "priority": 50
+  },
+  {
+    "id": "ST-SCEN-004",
+    "title": "Breakdown Mode and Perfectionism",
+    "retrieval_tags": ["perfectionism", "shame_loop", "breakdown"],
+    "signals": "Crying, despair, I can't do it all. self_talk_style = inner critic. binary_thinking_present = true.",
+    "coaching_moves": "Name the hidden story: if I don't do everything, I failed. Validate the impossible bar. Offer one grounding step and one compassion statement.",
+    "avoid_list": "Pep talks. More goals.",
+    "micro_actions": "Hand on chest, slow exhale 6 counts x 5. Pick one task to release explicitly. One sentence: my worth is not measured in output.",
+    "example_lines": "This isn't laziness. This is an internal bar that no human can sustain.\nChoosing less is wisdom, not failure.",
+    "priority": 50
+  },
+  {
+    "id": "ST-SCEN-005",
+    "title": "Shame Hangover After Numbing",
+    "retrieval_tags": ["numbing", "shame_loop", "repair"],
+    "signals": "Mentions binge, weed, scrolling followed by guilt. self_talk_style = harsh critic. emotion_primary = shame or guilt.",
+    "coaching_moves": "Separate behavior from identity. Treat numbing as a regulation strategy with a cost. Move to repair, not punishment.",
+    "avoid_list": "Scolding. Extreme abstinence demands in the moment.",
+    "micro_actions": "Name what the numbing tried to protect. One small repair: hydration, shower, 10-minute walk. Write: what was I trying not to feel.",
+    "example_lines": "You were not failing. You were trying to soften something sharp.\nLet's reduce the cost without shaming the need.",
+    "priority": 50
+  },
+  {
+    "id": "ST-SCEN-006",
+    "title": "Intensity Seeking and Void Avoidance",
+    "retrieval_tags": ["intensity_seeking", "planned_landing_needed", "avoidance"],
+    "signals": "intensity_seeking = medium or high; restless, bored, chasing stimulation; fear appears when things get quiet",
+    "coaching_moves": "Normalize desire for intensity. Differentiate regulation vs avoidance. Introduce planned landings and integration.",
+    "avoid_list": "Telling them to calm down as a moral instruction. Framing intensity as bad.",
+    "micro_actions": "Schedule a landing ritual: tea, shower, music, journaling prompt. Choose \"one high, one low\": one stimulating activity, one grounding activity. 3-minute stillness with a timer, then stop.",
+    "example_lines": "You don't need to remove intensity. You need a runway to land it.\nQuiet can feel like a threat when your system is used to motion.",
+    "priority": 60
+  },
+  {
+    "id": "ST-SCEN-007",
+    "title": "Decision Paralysis and Fear of Regret",
+    "retrieval_tags": ["decision_paralysis", "fear_of_regret", "overthinking"],
+    "signals": "Circular pros/cons. Catastrophizing outcomes. Difficulty committing.",
+    "coaching_moves": "Name the fear behind indecision. Shift to reversible experiments. Use body-based choice check.",
+    "avoid_list": "Pushing a single correct choice. Long philosophical analysis.",
+    "micro_actions": "Choose the next right step, not the forever answer. 48-hour experiment with one option. Body check: which option gives 1 percent more space.",
+    "example_lines": "You're not stuck on the decision. You're stuck on the fear of regret.\nLet's pick a test, not a verdict.",
+    "priority": 70
+  },
+  {
+    "id": "ST-SCEN-008",
+    "title": "People Pleasing and Boundary Guilt",
+    "retrieval_tags": ["people_pleasing", "boundary_guilt", "attachment"],
+    "signals": "Guilt after saying no. Fear of disappointing others. Resentment builds quietly.",
+    "coaching_moves": "Name the safety story tied to others' comfort. Normalize anxiety spike after boundary. Offer a small boundary script.",
+    "avoid_list": "\"Just say no.\" Blaming the user for patterns formed in survival.",
+    "micro_actions": "Delay response: let me check and get back to you. One boundary: I can do X, not Y. Write: what do I fear will happen if I hold the line.",
+    "example_lines": "Your guilt is a nervous system echo, not proof you did something wrong.\nBoundaries protect connection. They don't destroy it.",
+    "priority": 70
+  },
+  {
+    "id": "ST-SCEN-009",
+    "title": "Conflict Avoidance and Resentment Build",
+    "retrieval_tags": ["conflict_avoidance", "resentment", "indirect_needs"],
+    "signals": "Mentions swallowing feelings. Resentment language. Fear of being seen as difficult.",
+    "coaching_moves": "Validate need for safety. Shift from confrontation to clarity. Suggest one honest sentence.",
+    "avoid_list": "Forcing a big talk. Assuming the other person is unsafe without evidence.",
+    "micro_actions": "Write a 2-sentence truth: when X happens, I feel Y, I need Z. Choose a low-stakes ask. Practice saying it out loud once.",
+    "example_lines": "Avoiding conflict is often avoiding the feeling of exposure.\nLet's make one clean request instead of carrying resentment for weeks.",
+    "priority": 70
+  },
+  {
+    "id": "ST-SCEN-010",
+    "title": "Comparison Spiral and Social Media Collapse",
+    "retrieval_tags": ["comparison", "worthiness", "algorithm_effect"],
+    "signals": "Feeling behind, jealous, not enough. After scrolling. Shame plus urgency.",
+    "coaching_moves": "Name the comparison loop and externalize algorithm pressure. Re-anchor to values and body truth. Suggest realistic screen boundary.",
+    "avoid_list": "Toxic positivity. Telling them to be grateful.",
+    "micro_actions": "24-hour unfollow mute of top trigger account. Replace scroll with 5-minute body check. Write: what do I actually want, not what looks impressive.",
+    "example_lines": "Your brain is reacting to a highlight reel. That does not mean your life is failing.\nLet's come back to what success feels like in your body.",
+    "priority": 70
+  },
+  {
+    "id": "ST-SCEN-011",
+    "title": "Burnout Disguised as Ambition",
+    "retrieval_tags": ["burnout", "overworking", "survival_mode"],
+    "signals": "Constant push language. nervous_system_state = activated and sustained. Resentment, fatigue, loss of joy.",
+    "coaching_moves": "Name survival mode as the engine. Use opportunity cost lens: what is this costing. Encourage subtraction and one recovery block.",
+    "avoid_list": "Praise for hustle. Suggesting more optimization.",
+    "micro_actions": "Choose one commitment to pause. Schedule one protected rest block. Define \"enough for today\" in one sentence.",
+    "example_lines": "This looks like survival mode wearing ambition's outfit.\nWhat is the opportunity cost of continuing at this pace?",
+    "priority": 50
+  },
+  {
+    "id": "ST-SCEN-012",
+    "title": "Avoidance Disguised as Rest",
+    "retrieval_tags": ["avoidance", "procrastination", "self_betrayal"],
+    "signals": "Rest that leaves them more anxious. Guilt plus stuckness. Doom scrolling labeled as downtime.",
+    "coaching_moves": "Separate true rest from avoidance. Offer a minimum viable start. Invite self-compassion without enabling.",
+    "avoid_list": "Shaming procrastination. Huge plans.",
+    "micro_actions": "5-minute starter sprint. Set a clear stop time. Ask: what am I avoiding feeling.",
+    "example_lines": "Real rest leaves you softer. Avoidance leaves you tighter.\nLet's make the next step so small your nervous system can't argue.",
+    "priority": 60
+  },
+  {
+    "id": "ST-SCEN-013",
+    "title": "Grief Without Spiritual Bypassing",
+    "retrieval_tags": ["grief", "loss", "emotional_validity"],
+    "signals": "Sadness, longing, heartbreak. Desire to fix the feeling quickly. Meaning-making pressure.",
+    "coaching_moves": "Validate grief as normal and intelligent. Allow the feeling without rushing to purpose. Offer gentle support: rituals, connection, somatic care.",
+    "avoid_list": "\"Everything happens for a reason.\" Forced gratitude.",
+    "micro_actions": "10-minute grief container: music, candle, tears allowed. Write: what I miss, what I wish I could say. One supportive reach out.",
+    "example_lines": "Grief is love with nowhere to go. It does not need to be solved today.\nWe can make space for it without letting it swallow you.",
+    "priority": 60
+  },
+  {
+    "id": "ST-SCEN-014",
+    "title": "Anger as Protector",
+    "retrieval_tags": ["anger", "boundary_signal", "protection"],
+    "signals": "Anger spikes after feeling disrespected or unseen. Resentment. Harsh self-talk for feeling angry.",
+    "coaching_moves": "Validate anger as protective information. Locate underlying need: respect, safety, autonomy. Redirect toward clean boundary or request.",
+    "avoid_list": "Labeling anger as toxic. Advising suppression.",
+    "micro_actions": "Ask: what is anger protecting. Draft one boundary sentence. Physical discharge: shake, brisk walk, breath.",
+    "example_lines": "Anger is often the part of you that refuses to be abandoned.\nLet's translate the signal into a clean ask.",
+    "priority": 60
+  },
+  {
+    "id": "ST-SCEN-015",
+    "title": "Relationship Anxiety and Attachment Loop",
+    "retrieval_tags": ["anxious_attachment", "reassurance_seeking", "relational_loop"],
+    "signals": "Spiraling about texts, distance, tone. Reassurance-seeking urges. Fear of abandonment.",
+    "coaching_moves": "Name the nervous system loop. Separate story from evidence. Offer grounding before action.",
+    "avoid_list": "Advising confrontation while activated. Dismissing as overreaction.",
+    "micro_actions": "10-minute delay before texting. Write 2 columns: facts vs story. One soothing action: breath, movement, shower.",
+    "example_lines": "Your system is trying to secure safety. That makes sense.\nLet's settle first, then decide what's true and what's fear.",
+    "priority": 60
+  },
+  {
+    "id": "ST-SCEN-016",
+    "title": "Worthiness Blocks and Receiving",
+    "retrieval_tags": ["worthiness", "receiving", "self_sabotage"],
+    "signals": "Discomfort with praise, help, success. Minimizing achievements. Guilt around taking space.",
+    "coaching_moves": "Name receiving discomfort as a learned pattern. Connect to identity safety. Invite one small receiving act.",
+    "avoid_list": "Telling them to just accept it. Performative affirmations.",
+    "micro_actions": "Accept one compliment without deflection. Receive help with one task. Journal: what would change if I let it be easier.",
+    "example_lines": "Sometimes receiving feels unsafe because struggle became your normal.\nLet's practice letting one thing be easier today.",
+    "priority": 70
+  },
+  {
+    "id": "ST-SCEN-017",
+    "title": "Success Fear and Upper Limit",
+    "retrieval_tags": ["success_fear", "upper_limit", "self_sabotage"],
+    "signals": "Things going well followed by chaos. Picking fights, procrastinating, numbing after wins. Fear of visibility.",
+    "coaching_moves": "Name the upper-limit pattern. Validate fear of change and exposure. Suggest a stabilization ritual after wins.",
+    "avoid_list": "Pushing bigger goals immediately. Framing it as irrational.",
+    "micro_actions": "Post-win landing: walk, breath, gratitude note. Write: what feels risky about success. Choose one stabilizing habit for 48 hours.",
+    "example_lines": "It's common to sabotage when success threatens your old identity.\nLet's stabilize the win instead of spiking it.",
+    "priority": 70
+  },
+  {
+    "id": "ST-SCEN-018",
+    "title": "Identity Whiplash After Growth Spurts",
+    "retrieval_tags": ["identity_shift", "integration", "disorientation"],
+    "signals": "Feeling untethered, not sure who I am now. Old life feels wrong, new life not formed. Oscillation between confidence and doubt.",
+    "coaching_moves": "Normalize liminal phase. Anchor to values and body signals. Suggest gentle experimentation.",
+    "avoid_list": "Forcing a new identity statement. Rushing to monetize or perform the growth.",
+    "micro_actions": "List: what is no longer true, what might be true. Choose one small aligned behavior. Reduce inputs for 24 hours.",
+    "example_lines": "This is the in-between. It feels messy because it is real.\nLet's anchor to what your body says yes to, one small step at a time.",
+    "priority": 70
+  },
+  {
+    "id": "ST-SCEN-019",
+    "title": "Spiritual Crisis and Meaning Collapse",
+    "retrieval_tags": ["existential_dread", "spiritual_crisis", "meaning"],
+    "signals": "What's the point, nothing feels real. Post-retreat wobble or existential dread. Nervous system instability.",
+    "coaching_moves": "Normalize meaning collapse as part of expansion. Ground to basics first. Offer meaning-making only after stabilization.",
+    "avoid_list": "Claiming cosmic certainty. Rushing to spiritual conclusions.",
+    "micro_actions": "Eat, hydrate, sleep, move checklist. One supportive human connection. Write: what is true today, not forever.",
+    "example_lines": "Meaning can collapse when your system outgrows an old story. That's disorienting.\nLet's stabilize the body first. Insight lands better in a regulated system.",
+    "priority": 70
+  },
+  {
+    "id": "ST-SCEN-020",
+    "title": "Crisis Override and Safety Redirect",
+    "retrieval_tags": ["crisis_flag", "self_harm_risk", "imminent_danger"],
+    "signals": "Explicit self-harm intent, plan, or imminent risk. Threats to harm others. Severe disorientation suggesting crisis. crisis_flag = true.",
+    "coaching_moves": "Stop coaching mode. Provide short, compassionate redirection to real-world help. Encourage contacting local emergency services or local crisis resources. Encourage reaching out to a trusted person immediately.",
+    "avoid_list": "Deep analysis. Soulsights generation. Advice that could be interpreted as clinical treatment.",
+    "micro_actions": "Ask them to contact emergency services if in immediate danger. Encourage reaching out to someone nearby. Offer grounding only as a bridge, not a solution.",
+    "example_lines": "I'm really glad you said this out loud. I can't support crisis situations the way a human can, and you deserve real help right now.\nIf you are in immediate danger, please contact your local emergency number now. If you can, reach out to someone you trust and tell them you need support.",
+    "priority": 1
+  }
+]
