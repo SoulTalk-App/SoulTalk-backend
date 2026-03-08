@@ -54,6 +54,15 @@ class Settings(BaseSettings):
     # Anthropic
     ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_MODEL: str = "claude-haiku-4-5-20251001"
+    ANTHROPIC_TAGGING_MODEL: str = "claude-haiku-4-5-20251001"
+    ANTHROPIC_RESPONSE_MODEL: str = "claude-sonnet-4-6"
+    ANTHROPIC_SOULSIGHT_MODEL: str = "claude-sonnet-4-6"
+    ANTHROPIC_DASHBOARD_MODEL: str = "claude-haiku-4-5-20251001"
+
+    # Voyage AI (embeddings)
+    VOYAGE_API_KEY: str = ""
+    VOYAGE_EMBEDDING_MODEL: str = "voyage-3-lite"
+    VOYAGE_EMBEDDING_DIMENSIONS: int = 1024
 
     # CORS
     CORS_ORIGINS: List[str] = [
