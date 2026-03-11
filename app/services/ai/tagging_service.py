@@ -9,6 +9,7 @@ from anthropic import AsyncAnthropic
 from app.core.config import settings
 from app.services.ai_schemas.tags_v1 import TagsV1
 from app.services.ai.safety import validate_tags
+from app.services.ai.usage_tracker import record_usage
 from app.services.ai_prompts.tagging import (
     TAGGING_SYSTEM_PROMPT,
     TAGGING_DEVELOPER_MESSAGE,
@@ -88,6 +89,13 @@ class TaggingService:
                 system=TAGGING_SYSTEM_PROMPT,
                 messages=messages,
                 temperature=0.0,
+            )
+
+            await record_usage(
+                model=settings.ANTHROPIC_TAGGING_MODEL,
+                service="tagging",
+                input_tokens=response.usage.input_tokens,
+                output_tokens=response.usage.output_tokens,
             )
 
             if not response.content:

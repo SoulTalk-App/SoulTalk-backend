@@ -122,6 +122,7 @@ table th { color: #8b949e; font-weight: 500; text-transform: uppercase; font-siz
     <button data-tab="schema">Tag Schema</button>
     <button data-tab="rules">Mode Rules</button>
     <button data-tab="pipeline">Pipeline Debugger</button>
+    <button data-tab="usage">API Usage</button>
   </nav>
 
   <!-- Prompts -->
@@ -272,6 +273,30 @@ table th { color: #8b949e; font-weight: 500; text-transform: uppercase; font-siz
 
     <!-- Batch results -->
     <div id="batch-results"></div>
+  </section>
+
+  <!-- Usage -->
+  <section id="tab-usage">
+    <div class="card">
+      <h3>API Usage & Cost</h3>
+      <p style="color:#8b949e;font-size:13px;margin-bottom:16px;">Every Anthropic API call is logged with token counts and estimated cost.</p>
+      <div style="display:flex;gap:12px;align-items:end;margin-bottom:16px;">
+        <div class="field-row">
+          <label>Period</label>
+          <select id="usage-days" style="padding:8px 12px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e1e4e8;font-size:13px;">
+            <option value="1">Today</option>
+            <option value="7">Last 7 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="365">All time</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <button class="btn btn-primary" onclick="loadUsage()" id="btn-usage">Load</button>
+        </div>
+      </div>
+      <div id="usage-results"><p style="color:#8b949e;">Select a period and click Load.</p></div>
+    </div>
   </section>
 </div>
 
@@ -1237,6 +1262,88 @@ function renderRespondStep(data) {
 
 function renderError(step, message) {
   return `<div class="card" style="border-color:#da3633;"><h3 style="color:#f85149;">${step} Failed</h3><pre style="color:#f85149;white-space:pre-wrap;font-size:12px;">${escHtml(message)}</pre></div>`;
+}
+
+// ── Usage ──
+async function loadUsage() {
+  const days = document.getElementById('usage-days').value;
+  const btn = document.getElementById('btn-usage');
+  const out = document.getElementById('usage-results');
+  btn.disabled = true; btn.textContent = 'Loading...';
+
+  try {
+    const d = await api(`/api/usage?days=${days}`);
+    let html = '';
+
+    // Summary cards
+    html += `<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
+      <div class="card" style="flex:1;min-width:140px;text-align:center;">
+        <div style="color:#8b949e;font-size:12px;">Estimated Cost</div>
+        <div style="font-size:24px;color:#3fb950;font-weight:700;">$${d.estimated_cost_usd.toFixed(4)}</div>
+      </div>
+      <div class="card" style="flex:1;min-width:140px;text-align:center;">
+        <div style="color:#8b949e;font-size:12px;">Total Calls</div>
+        <div style="font-size:24px;color:#58a6ff;font-weight:700;">${d.total_calls}</div>
+      </div>
+      <div class="card" style="flex:1;min-width:140px;text-align:center;">
+        <div style="color:#8b949e;font-size:12px;">Input Tokens</div>
+        <div style="font-size:24px;color:#d2a8ff;font-weight:700;">${d.total_input_tokens.toLocaleString()}</div>
+      </div>
+      <div class="card" style="flex:1;min-width:140px;text-align:center;">
+        <div style="color:#8b949e;font-size:12px;">Output Tokens</div>
+        <div style="font-size:24px;color:#f0883e;font-weight:700;">${d.total_output_tokens.toLocaleString()}</div>
+      </div>
+    </div>`;
+
+    if (!d.total_calls) {
+      html += '<p style="color:#8b949e;">No API calls recorded yet. Run some pipeline operations first.</p>';
+      out.innerHTML = html;
+      btn.disabled = false; btn.textContent = 'Load';
+      return;
+    }
+
+    // By model
+    if (Object.keys(d.by_model).length) {
+      html += '<div class="card" style="margin-bottom:16px;"><h3>By Model</h3><table><tr><th>Model</th><th style="text-align:right;">Calls</th><th style="text-align:right;">Input</th><th style="text-align:right;">Output</th><th style="text-align:right;">Cost</th></tr>';
+      for (const [model, t] of Object.entries(d.by_model)) {
+        html += `<tr><td style="color:#d2a8ff;">${escHtml(model)}</td><td style="text-align:right;">${t.calls}</td><td style="text-align:right;">${t.input.toLocaleString()}</td><td style="text-align:right;">${t.output.toLocaleString()}</td><td style="text-align:right;color:#3fb950;">$${t.cost.toFixed(4)}</td></tr>`;
+      }
+      html += '</table></div>';
+    }
+
+    // By service
+    if (Object.keys(d.by_service).length) {
+      html += '<div class="card" style="margin-bottom:16px;"><h3>By Service</h3><table><tr><th>Service</th><th style="text-align:right;">Calls</th><th style="text-align:right;">Input</th><th style="text-align:right;">Output</th><th style="text-align:right;">Cost</th></tr>';
+      for (const [svc, t] of Object.entries(d.by_service)) {
+        html += `<tr><td style="color:#7ee787;">${escHtml(svc)}</td><td style="text-align:right;">${t.calls}</td><td style="text-align:right;">${t.input.toLocaleString()}</td><td style="text-align:right;">${t.output.toLocaleString()}</td><td style="text-align:right;color:#3fb950;">$${t.cost.toFixed(4)}</td></tr>`;
+      }
+      html += '</table></div>';
+    }
+
+    // Daily breakdown
+    if (Object.keys(d.daily).length) {
+      html += '<div class="card" style="margin-bottom:16px;"><h3>Daily Breakdown</h3><table><tr><th>Date</th><th style="text-align:right;">Calls</th><th style="text-align:right;">Tokens</th><th style="text-align:right;">Cost</th></tr>';
+      const days_sorted = Object.entries(d.daily).reverse();
+      for (const [date, v] of days_sorted) {
+        html += `<tr><td>${date}</td><td style="text-align:right;">${v.calls}</td><td style="text-align:right;">${v.tokens.toLocaleString()}</td><td style="text-align:right;color:#3fb950;">$${v.cost.toFixed(4)}</td></tr>`;
+      }
+      html += '</table></div>';
+    }
+
+    // Recent calls
+    if (d.recent_calls.length) {
+      html += '<div class="card"><h3>Recent Calls (last 50)</h3><table><tr><th>Time</th><th>Service</th><th>Model</th><th style="text-align:right;">In</th><th style="text-align:right;">Out</th><th style="text-align:right;">Cost</th></tr>';
+      for (const c of d.recent_calls) {
+        html += `<tr><td style="color:#8b949e;font-size:12px;">${c.time}</td><td style="color:#7ee787;">${c.service}</td><td style="color:#d2a8ff;font-size:12px;">${escHtml(c.model)}</td><td style="text-align:right;">${c.input_tokens.toLocaleString()}</td><td style="text-align:right;">${c.output_tokens.toLocaleString()}</td><td style="text-align:right;color:#3fb950;">$${c.cost.toFixed(6)}</td></tr>`;
+      }
+      html += '</table></div>';
+    }
+
+    out.innerHTML = html;
+  } catch (e) {
+    out.innerHTML = `<div class="card" style="border-color:#da3633;"><h3 style="color:#f85149;">Error</h3><pre style="color:#f85149;">${escHtml(e.message)}</pre></div>`;
+  }
+  btn.disabled = false; btn.textContent = 'Load';
 }
 
 // Auto-login if token exists

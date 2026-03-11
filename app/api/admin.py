@@ -311,6 +311,99 @@ async def get_mode_rules(_=Depends(verify_admin)):
     }
 
 
+# ── Usage & Cost ──
+
+@router.get("/api/usage")
+async def get_usage(
+    days: int = 30,
+    db: AsyncSession = Depends(get_async_session),
+    _=Depends(verify_admin),
+):
+    """Return API usage from DB, aggregated by model and service."""
+    from app.models.api_usage_log import APIUsageLog
+    from datetime import datetime, timedelta, timezone
+    from sqlalchemy import func
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+    # All entries in range
+    result = await db.execute(
+        select(APIUsageLog)
+        .where(APIUsageLog.created_at >= cutoff)
+        .order_by(APIUsageLog.created_at.desc())
+    )
+    entries = result.scalars().all()
+
+    total_input = 0
+    total_output = 0
+    total_cost = 0.0
+    by_model = {}
+    by_service = {}
+    daily = {}
+
+    for e in entries:
+        total_input += e.input_tokens
+        total_output += e.output_tokens
+        total_cost += e.estimated_cost_usd
+
+        # By model
+        if e.model not in by_model:
+            by_model[e.model] = {"input": 0, "output": 0, "calls": 0, "cost": 0.0}
+        by_model[e.model]["input"] += e.input_tokens
+        by_model[e.model]["output"] += e.output_tokens
+        by_model[e.model]["calls"] += 1
+        by_model[e.model]["cost"] += e.estimated_cost_usd
+
+        # By service
+        if e.service not in by_service:
+            by_service[e.service] = {"input": 0, "output": 0, "calls": 0, "cost": 0.0}
+        by_service[e.service]["input"] += e.input_tokens
+        by_service[e.service]["output"] += e.output_tokens
+        by_service[e.service]["calls"] += 1
+        by_service[e.service]["cost"] += e.estimated_cost_usd
+
+        # Daily
+        day_key = e.created_at.strftime("%Y-%m-%d")
+        if day_key not in daily:
+            daily[day_key] = {"calls": 0, "cost": 0.0, "tokens": 0}
+        daily[day_key]["calls"] += 1
+        daily[day_key]["cost"] += e.estimated_cost_usd
+        daily[day_key]["tokens"] += e.input_tokens + e.output_tokens
+
+    # Round costs
+    total_cost = round(total_cost, 6)
+    for v in by_model.values():
+        v["cost"] = round(v["cost"], 6)
+    for v in by_service.values():
+        v["cost"] = round(v["cost"], 6)
+    for v in daily.values():
+        v["cost"] = round(v["cost"], 6)
+
+    # Recent calls (last 50)
+    recent = []
+    for e in entries[:50]:
+        recent.append({
+            "time": e.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            "model": e.model,
+            "service": e.service,
+            "input_tokens": e.input_tokens,
+            "output_tokens": e.output_tokens,
+            "cost": round(e.estimated_cost_usd, 6),
+        })
+
+    return {
+        "days": days,
+        "total_calls": len(entries),
+        "total_input_tokens": total_input,
+        "total_output_tokens": total_output,
+        "estimated_cost_usd": total_cost,
+        "by_model": by_model,
+        "by_service": by_service,
+        "daily": dict(sorted(daily.items())),
+        "recent_calls": recent,
+    }
+
+
 # ── Pipeline Debugger ──
 
 class PipelineTagRequest(BaseModel):
