@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoulTalk Admin</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1117; color: #e1e4e8; line-height: 1.5; }
+.login-overlay { position: fixed; inset: 0; background: #0f1117; display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.login-box { background: #1c1f26; border: 1px solid #30363d; border-radius: 12px; padding: 40px; width: 360px; text-align: center; }
+.login-box h1 { font-size: 24px; margin-bottom: 8px; color: #f0f6fc; }
+.login-box p { color: #8b949e; margin-bottom: 24px; font-size: 14px; }
+.login-box input { width: 100%; padding: 10px 14px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #e1e4e8; font-size: 14px; margin-bottom: 16px; }
+.login-box input:focus { outline: none; border-color: #58a6ff; }
+.login-box button { width: 100%; padding: 10px; background: #238636; border: none; border-radius: 6px; color: #fff; font-size: 14px; cursor: pointer; font-weight: 600; }
+.login-box button:hover { background: #2ea043; }
+.login-error { color: #f85149; font-size: 13px; margin-top: 8px; }
+
+.app { display: none; max-width: 1100px; margin: 0 auto; padding: 20px; }
+.app.visible { display: block; }
+
+header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #21262d; margin-bottom: 24px; }
+header h1 { font-size: 20px; color: #f0f6fc; }
+header button { background: #21262d; border: 1px solid #30363d; color: #8b949e; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+header button:hover { color: #f0f6fc; border-color: #8b949e; }
+
+nav { display: flex; gap: 4px; margin-bottom: 24px; flex-wrap: wrap; }
+nav button { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; }
+nav button:hover { background: #30363d; }
+nav button.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+
+section { display: none; }
+section.visible { display: block; }
+
+.card { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+.card h3 { font-size: 15px; color: #f0f6fc; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+.card h3 .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 400; }
+.badge-db { background: #1f6feb33; color: #58a6ff; }
+.badge-default { background: #21262d; color: #8b949e; }
+
+.field-row { margin-bottom: 12px; }
+.field-row label { display: block; font-size: 12px; color: #8b949e; margin-bottom: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.field-row textarea, .field-row input[type="text"], .field-row input[type="number"] {
+    width: 100%; padding: 8px 12px; background: #0d1117; border: 1px solid #30363d;
+    border-radius: 6px; color: #e1e4e8; font-size: 13px; font-family: 'SF Mono', 'Fira Code', monospace; resize: vertical;
+}
+.field-row textarea:focus, .field-row input:focus { outline: none; border-color: #58a6ff; }
+
+.btn { padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; border: 1px solid transparent; }
+.btn-primary { background: #238636; color: #fff; }
+.btn-primary:hover { background: #2ea043; }
+.btn-secondary { background: #21262d; color: #c9d1d9; border-color: #30363d; }
+.btn-secondary:hover { background: #30363d; }
+.btn-danger { background: #da3633; color: #fff; }
+.btn-danger:hover { background: #f85149; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-group { display: flex; gap: 8px; margin-top: 12px; }
+
+.tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.tag { background: #21262d; color: #c9d1d9; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-family: monospace; }
+
+.rule-block { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 12px 16px; margin-bottom: 8px; }
+.rule-block h4 { color: #58a6ff; font-size: 14px; margin-bottom: 6px; }
+.rule-block p { color: #8b949e; font-size: 13px; margin-bottom: 6px; }
+.rule-block code { display: block; color: #7ee787; font-size: 12px; padding: 2px 0; font-family: monospace; }
+
+.toast { position: fixed; bottom: 20px; right: 20px; background: #238636; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 14px; z-index: 2000; display: none; }
+.toast.error { background: #da3633; }
+.toast.visible { display: block; }
+
+.history-list { max-height: 300px; overflow-y: auto; }
+.history-item { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 10px; margin-bottom: 8px; }
+.history-item .meta { font-size: 11px; color: #8b949e; margin-bottom: 4px; }
+.history-item pre { font-size: 12px; color: #c9d1d9; white-space: pre-wrap; max-height: 100px; overflow: hidden; }
+.history-item.expanded pre { max-height: none; }
+
+.schema-section { margin-bottom: 12px; }
+.schema-section h4 { color: #d2a8ff; font-size: 14px; margin-bottom: 8px; cursor: pointer; }
+.schema-section h4:hover { color: #f0f6fc; }
+
+table { width: 100%; border-collapse: collapse; }
+table th, table td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #21262d; font-size: 13px; }
+table th { color: #8b949e; font-weight: 500; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+
+.playbook-card { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 16px; margin-bottom: 12px; }
+.playbook-card h4 { color: #f0f6fc; font-size: 14px; margin-bottom: 4px; }
+.playbook-card .meta { color: #8b949e; font-size: 12px; margin-bottom: 8px; }
+
+.loading { text-align: center; color: #8b949e; padding: 40px; }
+
+.collapsible-content { display: none; }
+.collapsible-content.open { display: block; }
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <h1>SoulTalk Admin</h1>
+    <p>Enter admin passcode to continue</p>
+    <input type="password" id="passcodeInput" placeholder="Passcode" autofocus>
+    <button onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- App -->
+<div class="app" id="app">
+  <header>
+    <h1>SoulTalk Admin</h1>
+    <button onclick="doLogout()">Sign Out</button>
+  </header>
+
+  <nav id="nav">
+    <button data-tab="prompts" class="active">Prompts</button>
+    <button data-tab="models">Models</button>
+    <button data-tab="thresholds">Thresholds</button>
+    <button data-tab="aliases">Emotion Aliases</button>
+    <button data-tab="playbooks">Playbooks</button>
+    <button data-tab="schema">Tag Schema</button>
+    <button data-tab="rules">Mode Rules</button>
+    <button data-tab="pipeline">Pipeline Debugger</button>
+  </nav>
+
+  <!-- Prompts -->
+  <section id="tab-prompts" class="visible">
+    <div class="loading" id="prompts-loading">Loading prompts...</div>
+    <div id="prompts-content"></div>
+  </section>
+
+  <!-- Models -->
+  <section id="tab-models">
+    <div class="loading" id="models-loading">Loading models...</div>
+    <div id="models-content"></div>
+  </section>
+
+  <!-- Thresholds -->
+  <section id="tab-thresholds">
+    <div class="loading" id="thresholds-loading">Loading thresholds...</div>
+    <div id="thresholds-content"></div>
+  </section>
+
+  <!-- Aliases -->
+  <section id="tab-aliases">
+    <div class="loading" id="aliases-loading">Loading aliases...</div>
+    <div id="aliases-content"></div>
+  </section>
+
+  <!-- Playbooks -->
+  <section id="tab-playbooks">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 style="font-size:16px;color:#f0f6fc;">Scenario Playbooks</h2>
+      <button class="btn btn-primary btn-sm" onclick="showNewPlaybook()">+ New Playbook</button>
+    </div>
+    <div class="loading" id="playbooks-loading">Loading playbooks...</div>
+    <div id="playbooks-content"></div>
+  </section>
+
+  <!-- Schema -->
+  <section id="tab-schema">
+    <div class="loading" id="schema-loading">Loading schema...</div>
+    <div id="schema-content"></div>
+  </section>
+
+  <!-- Rules -->
+  <section id="tab-rules">
+    <div class="loading" id="rules-loading">Loading rules...</div>
+    <div id="rules-content"></div>
+  </section>
+
+  <!-- Pipeline Debugger -->
+  <section id="tab-pipeline">
+    <!-- Persona Picker -->
+    <div class="card">
+      <h3>Load from Test Personas</h3>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;">
+        <div class="field-row" style="flex:1;min-width:150px;">
+          <label>Persona</label>
+          <select id="persona-select" onchange="onPersonaChange()" style="width:100%;padding:8px 12px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e1e4e8;font-size:13px;">
+            <option value="">-- Select persona --</option>
+          </select>
+        </div>
+        <div class="field-row" style="flex:1;min-width:150px;">
+          <label>Entry</label>
+          <select id="entry-select" onchange="onEntryChange()" style="width:100%;padding:8px 12px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e1e4e8;font-size:13px;">
+            <option value="">-- Select entry --</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <button class="btn btn-secondary" onclick="loadPersonaEntry()">Load Entry</button>
+        </div>
+      </div>
+      <div id="persona-info" style="color:#8b949e;font-size:12px;margin-top:8px;"></div>
+    </div>
+
+    <!-- Single Entry Debugger -->
+    <div class="card">
+      <h3>Single Entry Debugger</h3>
+      <p style="color:#8b949e;font-size:13px;margin-bottom:16px;">Paste a journal entry or load from personas above. No data is saved to the database.</p>
+
+      <div class="field-row">
+        <label>Journal Entry</label>
+        <textarea id="pipe-input" rows="6" placeholder="Paste a journal entry here..."></textarea>
+      </div>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <div class="field-row" style="flex:1;min-width:150px;">
+          <label>Tone Preference</label>
+          <select id="pipe-tone" style="width:100%;padding:8px 12px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e1e4e8;font-size:13px;">
+            <option value="balanced">Balanced</option>
+            <option value="softer">Softer</option>
+            <option value="direct">Direct</option>
+          </select>
+        </div>
+        <div class="field-row" style="flex:1;min-width:150px;">
+          <label>Main Focus</label>
+          <input type="text" id="pipe-focus" placeholder="e.g. anxiety management" value="">
+        </div>
+        <div class="field-row" style="flex:1;min-width:150px;">
+          <label>Language</label>
+          <input type="text" id="pipe-lang" value="en" style="width:80px;">
+        </div>
+      </div>
+
+      <div id="expected-mode-display" style="display:none;margin-bottom:8px;padding:8px 12px;background:#21262d;border-radius:6px;font-size:13px;">
+        Expected mode: <strong id="expected-mode-value" style="color:#58a6ff;"></strong>
+        <span id="expected-tags-display" style="margin-left:12px;color:#8b949e;"></span>
+      </div>
+
+      <div class="btn-group" style="margin-bottom:8px;">
+        <button class="btn btn-primary" onclick="runFullPipeline()" id="btn-full">Run Full Pipeline</button>
+        <button class="btn btn-secondary" onclick="runStep('tag')" id="btn-tag">Tag Only</button>
+        <button class="btn btn-secondary" onclick="runStep('mode')" id="btn-mode">Mode Only</button>
+        <button class="btn btn-secondary" onclick="runStep('retrieve')" id="btn-retrieve">Retrieve Only</button>
+        <button class="btn btn-secondary" onclick="runStep('respond')" id="btn-respond">Respond Only</button>
+      </div>
+      <p style="color:#8b949e;font-size:11px;">Mode/Retrieve/Respond use the tags from the last Tag run. Run Tag first, then the others.</p>
+    </div>
+
+    <!-- Step outputs -->
+    <div id="pipe-results"></div>
+
+    <!-- Batch Runners -->
+    <div class="card" style="margin-top:24px;">
+      <h3>Batch Test Runners</h3>
+      <p style="color:#8b949e;font-size:13px;margin-bottom:16px;">Run all entries for a persona or sample the Kaggle dataset.</p>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;">
+        <div class="field-row" style="flex:1;min-width:200px;">
+          <label>Run Persona Batch (Tag + Mode)</label>
+          <select id="batch-persona-select" style="width:100%;padding:8px 12px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e1e4e8;font-size:13px;">
+            <option value="">-- Select persona --</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <button class="btn btn-primary" onclick="runPersonaBatch()" id="btn-batch">Run Batch</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-top:16px;border-top:1px solid #21262d;padding-top:16px;">
+        <div class="field-row" style="min-width:120px;">
+          <label>Kaggle Sample Size</label>
+          <input type="number" id="kaggle-limit" value="10" min="1" max="100" style="width:80px;">
+        </div>
+        <div class="field-row">
+          <button class="btn btn-primary" onclick="runKaggleSample()" id="btn-kaggle">Run Kaggle Sample</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Batch results -->
+    <div id="batch-results"></div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE = window.location.pathname.replace(/\/$/, '');
+let TOKEN = localStorage.getItem('st_admin_token') || '';
+
+// ── Auth ──
+async function doLogin() {
+  const pass = document.getElementById('passcodeInput').value;
+  try {
+    const r = await fetch(BASE + '/api/auth', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({passcode: pass})
+    });
+    if (!r.ok) throw new Error('Invalid passcode');
+    const d = await r.json();
+    TOKEN = d.token;
+    localStorage.setItem('st_admin_token', TOKEN);
+    showApp();
+  } catch(e) {
+    document.getElementById('loginError').textContent = e.message;
+  }
+}
+
+function doLogout() {
+  TOKEN = '';
+  localStorage.removeItem('st_admin_token');
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('app').classList.remove('visible');
+}
+
+function showApp() {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  loadAll();
+}
+
+document.getElementById('passcodeInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+// ── API helper ──
+async function api(path, opts = {}) {
+  const r = await fetch(BASE + path, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Token': TOKEN, ...(opts.headers || {}) },
+  });
+  if (r.status === 401) { doLogout(); throw new Error('Session expired'); }
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+function toast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast visible' + (isError ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ── Tabs ──
+document.getElementById('nav').addEventListener('click', e => {
+  if (e.target.tagName !== 'BUTTON') return;
+  document.querySelectorAll('#nav button').forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  document.querySelectorAll('section').forEach(s => s.classList.remove('visible'));
+  document.getElementById('tab-' + e.target.dataset.tab).classList.add('visible');
+});
+
+// ── Load all data ──
+let configData = {};
+
+async function loadAll() {
+  try {
+    configData = await api('/api/config');
+    renderPrompts();
+    renderModels();
+    renderThresholds();
+    renderAliases();
+  } catch(e) { toast('Failed to load config: ' + e.message, true); }
+
+  loadPlaybooks();
+  loadSchema();
+  loadRules();
+  loadPersonas();
+}
+
+// ── Prompts ──
+function renderPrompts() {
+  const container = document.getElementById('prompts-content');
+  document.getElementById('prompts-loading').style.display = 'none';
+  const prompts = configData.prompt || {};
+  let html = '';
+  for (const [key, info] of Object.entries(prompts)) {
+    const source = info.source;
+    const val = info.value;
+    const rows = Math.min(Math.max(val.split('\n').length + 1, 4), 20);
+    html += `
+      <div class="card">
+        <h3>${key} <span class="badge ${source === 'db' ? 'badge-db' : 'badge-default'}">${source}</span></h3>
+        <div class="field-row">
+          <textarea id="prompt-${key}" rows="${rows}">${escHtml(val)}</textarea>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary btn-sm" onclick="saveConfig('prompt','${key}','prompt-${key}')">Save</button>
+          <button class="btn btn-secondary btn-sm" onclick="resetConfig('prompt','${key}')">Reset to Default</button>
+          <button class="btn btn-secondary btn-sm" onclick="showHistory('${key}')">History</button>
+        </div>
+        <div id="history-${key}" style="margin-top:12px;"></div>
+      </div>`;
+  }
+  container.innerHTML = html;
+}
+
+async function showHistory(key) {
+  const el = document.getElementById('history-' + key);
+  if (el.innerHTML) { el.innerHTML = ''; return; }
+  try {
+    const history = await api('/api/prompts/' + key + '/history');
+    if (!history.length) { el.innerHTML = '<p style="color:#8b949e;font-size:13px;">No version history yet.</p>'; return; }
+    let html = '<div class="history-list">';
+    for (const h of history) {
+      const date = new Date(h.created_at).toLocaleString();
+      html += `
+        <div class="history-item" onclick="this.classList.toggle('expanded')">
+          <div class="meta">${date} &middot; ${h.id.slice(0,8)}</div>
+          <pre>${escHtml(h.value)}</pre>
+          <button class="btn btn-secondary btn-sm" style="margin-top:6px;" onclick="event.stopPropagation();rollbackPrompt('${key}',this)" data-value="${escAttr(h.value)}">Restore this version</button>
+        </div>`;
+    }
+    html += '</div>';
+    el.innerHTML = html;
+  } catch(e) { toast('Failed to load history: ' + e.message, true); }
+}
+
+async function rollbackPrompt(key, btn) {
+  const val = btn.dataset.value;
+  document.getElementById('prompt-' + key).value = val;
+  await saveConfig('prompt', key, 'prompt-' + key);
+}
+
+// ── Models ──
+function renderModels() {
+  const container = document.getElementById('models-content');
+  document.getElementById('models-loading').style.display = 'none';
+  const models = configData.model || {};
+  let html = '<div class="card"><h3>AI Models & Parameters</h3><table><thead><tr><th>Key</th><th>Value</th><th>Source</th><th></th></tr></thead><tbody>';
+  for (const [key, info] of Object.entries(models)) {
+    html += `<tr>
+      <td style="font-family:monospace;">${key}</td>
+      <td><input type="text" id="model-${key}" value="${escAttr(info.value)}" style="width:300px;"></td>
+      <td><span class="badge ${info.source === 'db' ? 'badge-db' : 'badge-default'}">${info.source}</span></td>
+      <td>
+        <button class="btn btn-primary btn-sm" onclick="saveConfig('model','${key}','model-${key}')">Save</button>
+        <button class="btn btn-secondary btn-sm" onclick="resetConfig('model','${key}')">Reset</button>
+      </td>
+    </tr>`;
+  }
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+
+// ── Thresholds ──
+function renderThresholds() {
+  const container = document.getElementById('thresholds-content');
+  document.getElementById('thresholds-loading').style.display = 'none';
+  const thresholds = configData.threshold || {};
+  let html = '<div class="card"><h3>Mode Selector Thresholds</h3><table><thead><tr><th>Key</th><th>Value</th><th>Source</th><th></th></tr></thead><tbody>';
+  for (const [key, info] of Object.entries(thresholds)) {
+    html += `<tr>
+      <td style="font-family:monospace;">${key}</td>
+      <td><input type="text" id="threshold-${key}" value="${escAttr(info.value)}" style="width:300px;"></td>
+      <td><span class="badge ${info.source === 'db' ? 'badge-db' : 'badge-default'}">${info.source}</span></td>
+      <td>
+        <button class="btn btn-primary btn-sm" onclick="saveConfig('threshold','${key}','threshold-${key}')">Save</button>
+        <button class="btn btn-secondary btn-sm" onclick="resetConfig('threshold','${key}')">Reset</button>
+      </td>
+    </tr>`;
+  }
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+
+// ── Aliases ──
+function renderAliases() {
+  const container = document.getElementById('aliases-content');
+  document.getElementById('aliases-loading').style.display = 'none';
+  const aliases = configData.alias || {};
+  const info = aliases.emotion_aliases;
+  if (!info) { container.innerHTML = '<p>No alias config found.</p>'; return; }
+  let aliasMap;
+  try { aliasMap = JSON.parse(info.value); } catch { aliasMap = {}; }
+  let html = `<div class="card">
+    <h3>Emotion Aliases <span class="badge ${info.source === 'db' ? 'badge-db' : 'badge-default'}">${info.source}</span></h3>
+    <p style="color:#8b949e;font-size:13px;margin-bottom:12px;">Maps non-standard emotions to valid enum values during tag normalization.</p>
+    <table><thead><tr><th>Input Emotion</th><th>Maps To</th></tr></thead><tbody>`;
+  for (const [from, to] of Object.entries(aliasMap).sort((a,b) => a[0].localeCompare(b[0]))) {
+    html += `<tr><td style="font-family:monospace;">${from}</td><td style="font-family:monospace;color:#7ee787;">${to}</td></tr>`;
+  }
+  html += `</tbody></table>
+    <div class="field-row" style="margin-top:16px;">
+      <label>Edit JSON (full alias map)</label>
+      <textarea id="alias-emotion_aliases" rows="10">${escHtml(JSON.stringify(aliasMap, null, 2))}</textarea>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary btn-sm" onclick="saveAliases()">Save</button>
+      <button class="btn btn-secondary btn-sm" onclick="resetConfig('alias','emotion_aliases')">Reset to Default</button>
+    </div>
+  </div>`;
+  container.innerHTML = html;
+}
+
+async function saveAliases() {
+  const raw = document.getElementById('alias-emotion_aliases').value;
+  try { JSON.parse(raw); } catch { toast('Invalid JSON', true); return; }
+  try {
+    await api('/api/config', {
+      method: 'PUT',
+      body: JSON.stringify({ category: 'alias', key: 'emotion_aliases', value: raw })
+    });
+    toast('Aliases saved');
+    configData = await api('/api/config');
+    renderAliases();
+  } catch(e) { toast('Save failed: ' + e.message, true); }
+}
+
+// ── Config save/reset ──
+async function saveConfig(category, key, inputId) {
+  const el = document.getElementById(inputId);
+  const value = el.value;
+  try {
+    await api('/api/config', {
+      method: 'PUT',
+      body: JSON.stringify({ category, key, value })
+    });
+    toast(`Saved ${category}/${key}`);
+    configData = await api('/api/config');
+    if (category === 'prompt') renderPrompts();
+    else if (category === 'model') renderModels();
+    else if (category === 'threshold') renderThresholds();
+  } catch(e) { toast('Save failed: ' + e.message, true); }
+}
+
+async function resetConfig(category, key) {
+  if (!confirm(`Reset ${category}/${key} to default?`)) return;
+  try {
+    await api('/api/config/reset', {
+      method: 'POST',
+      body: JSON.stringify({ category, key, value: '' })
+    });
+    toast(`Reset ${category}/${key} to default`);
+    configData = await api('/api/config');
+    if (category === 'prompt') renderPrompts();
+    else if (category === 'model') renderModels();
+    else if (category === 'threshold') renderThresholds();
+    else if (category === 'alias') renderAliases();
+  } catch(e) { toast('Reset failed: ' + e.message, true); }
+}
+
+// ── Playbooks ──
+async function loadPlaybooks() {
+  try {
+    const playbooks = await api('/api/playbooks');
+    document.getElementById('playbooks-loading').style.display = 'none';
+    const container = document.getElementById('playbooks-content');
+    if (!playbooks.length) { container.innerHTML = '<p style="color:#8b949e;">No playbooks found.</p>'; return; }
+    let html = '';
+    for (const p of playbooks) {
+      html += `
+        <div class="playbook-card">
+          <div style="display:flex;justify-content:space-between;align-items:start;">
+            <div>
+              <h4>${escHtml(p.title)}</h4>
+              <div class="meta">ID: ${p.id} &middot; Priority: ${p.priority} &middot; ${p.is_active ? 'Active' : 'Inactive'}</div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-secondary btn-sm" onclick="editPlaybook('${p.id}')">Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deletePlaybook('${p.id}')">Delete</button>
+            </div>
+          </div>
+          <div class="tag-list">${p.retrieval_tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+          <div id="playbook-edit-${p.id}" style="margin-top:12px;"></div>
+        </div>`;
+    }
+    container.innerHTML = html;
+    window._playbooks = playbooks;
+  } catch(e) { toast('Failed to load playbooks: ' + e.message, true); }
+}
+
+function editPlaybook(id) {
+  const el = document.getElementById('playbook-edit-' + id);
+  if (el.innerHTML) { el.innerHTML = ''; return; }
+  const p = window._playbooks.find(x => x.id === id);
+  if (!p) return;
+  el.innerHTML = buildPlaybookForm(p);
+}
+
+function showNewPlaybook() {
+  const container = document.getElementById('playbooks-content');
+  if (document.getElementById('new-playbook-form')) return;
+  const form = document.createElement('div');
+  form.id = 'new-playbook-form';
+  form.className = 'card';
+  form.innerHTML = '<h3>New Playbook</h3>' + buildPlaybookForm({
+    id: '', title: '', retrieval_tags: [], signals: '', coaching_moves: '',
+    avoid_list: '', micro_actions: '', example_lines: '', priority: 100, is_active: true
+  });
+  container.prepend(form);
+}
+
+function buildPlaybookForm(p) {
+  const prefix = p.id || 'new';
+  return `
+    <div class="field-row"><label>ID</label><input type="text" id="pb-id-${prefix}" value="${escAttr(p.id)}" ${p.id ? 'readonly style="opacity:0.6"' : ''}></div>
+    <div class="field-row"><label>Title</label><input type="text" id="pb-title-${prefix}" value="${escAttr(p.title)}"></div>
+    <div class="field-row"><label>Retrieval Tags (comma-separated)</label><input type="text" id="pb-tags-${prefix}" value="${escAttr(p.retrieval_tags.join(', '))}"></div>
+    <div class="field-row"><label>Signals</label><textarea id="pb-signals-${prefix}" rows="3">${escHtml(p.signals)}</textarea></div>
+    <div class="field-row"><label>Coaching Moves</label><textarea id="pb-coaching-${prefix}" rows="3">${escHtml(p.coaching_moves)}</textarea></div>
+    <div class="field-row"><label>Avoid List</label><textarea id="pb-avoid-${prefix}" rows="2">${escHtml(p.avoid_list)}</textarea></div>
+    <div class="field-row"><label>Micro Actions</label><textarea id="pb-micro-${prefix}" rows="2">${escHtml(p.micro_actions)}</textarea></div>
+    <div class="field-row"><label>Example Lines</label><textarea id="pb-example-${prefix}" rows="2">${escHtml(p.example_lines)}</textarea></div>
+    <div class="field-row"><label>Priority</label><input type="number" id="pb-priority-${prefix}" value="${p.priority}" style="width:100px;"></div>
+    <div class="field-row"><label><input type="checkbox" id="pb-active-${prefix}" ${p.is_active ? 'checked' : ''}> Active</label></div>
+    <div class="btn-group">
+      <button class="btn btn-primary btn-sm" onclick="savePlaybook('${prefix}')">Save</button>
+      <button class="btn btn-secondary btn-sm" onclick="cancelPlaybookEdit('${prefix}')">Cancel</button>
+    </div>`;
+}
+
+async function savePlaybook(prefix) {
+  const id = document.getElementById('pb-id-' + prefix).value.trim();
+  if (!id) { toast('ID is required', true); return; }
+  const body = {
+    id,
+    title: document.getElementById('pb-title-' + prefix).value,
+    retrieval_tags: document.getElementById('pb-tags-' + prefix).value.split(',').map(s => s.trim()).filter(Boolean),
+    signals: document.getElementById('pb-signals-' + prefix).value,
+    coaching_moves: document.getElementById('pb-coaching-' + prefix).value,
+    avoid_list: document.getElementById('pb-avoid-' + prefix).value,
+    micro_actions: document.getElementById('pb-micro-' + prefix).value,
+    example_lines: document.getElementById('pb-example-' + prefix).value,
+    priority: parseInt(document.getElementById('pb-priority-' + prefix).value) || 100,
+    is_active: document.getElementById('pb-active-' + prefix).checked,
+  };
+  try {
+    await api('/api/playbooks', { method: 'PUT', body: JSON.stringify(body) });
+    toast('Playbook saved');
+    loadPlaybooks();
+  } catch(e) { toast('Save failed: ' + e.message, true); }
+}
+
+function cancelPlaybookEdit(prefix) {
+  if (prefix === 'new') {
+    const el = document.getElementById('new-playbook-form');
+    if (el) el.remove();
+  } else {
+    const el = document.getElementById('playbook-edit-' + prefix);
+    if (el) el.innerHTML = '';
+  }
+}
+
+async function deletePlaybook(id) {
+  if (!confirm('Delete playbook ' + id + '?')) return;
+  try {
+    await api('/api/playbooks/' + id, { method: 'DELETE' });
+    toast('Playbook deleted');
+    loadPlaybooks();
+  } catch(e) { toast('Delete failed: ' + e.message, true); }
+}
+
+// ── Schema ──
+async function loadSchema() {
+  try {
+    const data = await api('/api/schema');
+    document.getElementById('schema-loading').style.display = 'none';
+    const container = document.getElementById('schema-content');
+    let html = '<div class="card"><h3>TagsV1 Schema &amp; Enums (Read-Only)</h3>';
+
+    // Enums
+    html += '<h4 style="color:#d2a8ff;font-size:14px;margin:16px 0 8px;">Enum Types</h4>';
+    for (const [name, values] of Object.entries(data.enums)) {
+      html += `<div class="schema-section">
+        <h4 onclick="this.nextElementSibling.classList.toggle('open')" style="font-size:13px;color:#58a6ff;">${name} (${values.length})</h4>
+        <div class="collapsible-content"><div class="tag-list" style="margin-bottom:12px;">`;
+      for (const v of values) {
+        html += `<span class="tag">${v}</span>`;
+      }
+      html += '</div></div></div>';
+    }
+
+    // JSON Schema
+    html += '<h4 style="color:#d2a8ff;font-size:14px;margin:16px 0 8px;" onclick="document.getElementById(\'schema-json\').classList.toggle(\'open\')" >Full JSON Schema (click to expand)</h4>';
+    html += `<div id="schema-json" class="collapsible-content"><pre style="background:#0d1117;padding:12px;border-radius:6px;font-size:12px;overflow-x:auto;color:#c9d1d9;">${escHtml(JSON.stringify(data.schema, null, 2))}</pre></div>`;
+
+    html += '</div>';
+    container.innerHTML = html;
+  } catch(e) { toast('Failed to load schema: ' + e.message, true); }
+}
+
+// ── Rules ──
+async function loadRules() {
+  try {
+    const data = await api('/api/rules');
+    document.getElementById('rules-loading').style.display = 'none';
+    const container = document.getElementById('rules-content');
+    let html = '<div class="card"><h3>Mode Selector Rules (Read-Only)</h3>';
+    html += '<p style="color:#8b949e;font-size:13px;margin-bottom:16px;">Priority order: ' +
+      data.priority_order.map(m => `<span style="color:#58a6ff;">${m}</span>`).join(' > ') + '</p>';
+
+    for (const mode of data.priority_order) {
+      const r = data.modes[mode];
+      html += `<div class="rule-block">
+        <h4>${mode}</h4>
+        <p>${r.description}</p>`;
+      for (const c of r.conditions) {
+        html += `<code>${escHtml(c)}</code>`;
+      }
+      html += '</div>';
+    }
+
+    html += '<h4 style="color:#d2a8ff;font-size:14px;margin:20px 0 8px;">Hints</h4>';
+    for (const [hint, condition] of Object.entries(data.hints)) {
+      html += `<div class="rule-block"><h4>${hint}</h4><code>${escHtml(condition)}</code></div>`;
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+  } catch(e) { toast('Failed to load rules: ' + e.message, true); }
+}
+
+// ── Utils ──
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escAttr(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Personas ──
+let personasData = [];
+let currentExpectedMode = null;
+let currentExpectedTags = null;
+
+async function loadPersonas() {
+  try {
+    personasData = await api('/api/personas');
+    const sel = document.getElementById('persona-select');
+    const batchSel = document.getElementById('batch-persona-select');
+    for (const p of personasData) {
+      const opt = `<option value="${p.id}">${p.name} (${p.id}) — ${p.entries.length} entries</option>`;
+      sel.innerHTML += opt;
+      batchSel.innerHTML += opt;
+    }
+  } catch(e) { /* personas not available, that's ok */ }
+}
+
+function onPersonaChange() {
+  const pid = document.getElementById('persona-select').value;
+  const entrySel = document.getElementById('entry-select');
+  const info = document.getElementById('persona-info');
+  entrySel.innerHTML = '<option value="">-- Select entry --</option>';
+  currentExpectedMode = null;
+  currentExpectedTags = null;
+  document.getElementById('expected-mode-display').style.display = 'none';
+
+  if (!pid) { info.textContent = ''; return; }
+
+  const persona = personasData.find(p => p.id === pid);
+  if (!persona) return;
+
+  info.innerHTML = `<strong>${persona.name}</strong> — ${persona.bio}<br>Tone: ${persona.ai_profile?.tone_preference || 'balanced'} | Focus: ${persona.ai_profile?.main_focus || 'N/A'}`;
+
+  // Set tone/focus from persona
+  document.getElementById('pipe-tone').value = persona.ai_profile?.tone_preference || 'balanced';
+  document.getElementById('pipe-focus').value = persona.ai_profile?.main_focus || '';
+
+  for (const e of persona.entries) {
+    entrySel.innerHTML += `<option value="${e.day}">Day ${e.day} (${e.mood}) — ${e.expected_mode} — ${e.text.slice(0,60)}...</option>`;
+  }
+}
+
+function onEntryChange() {
+  const pid = document.getElementById('persona-select').value;
+  const day = document.getElementById('entry-select').value;
+  if (!pid || !day) return;
+
+  const persona = personasData.find(p => p.id === pid);
+  const entry = persona?.entries.find(e => String(e.day) === day);
+  if (!entry) return;
+
+  currentExpectedMode = entry.expected_mode;
+  currentExpectedTags = entry.expected_tags;
+}
+
+function loadPersonaEntry() {
+  const pid = document.getElementById('persona-select').value;
+  const day = document.getElementById('entry-select').value;
+  if (!pid || !day) { toast('Select a persona and entry first', true); return; }
+
+  const persona = personasData.find(p => p.id === pid);
+  const entry = persona?.entries.find(e => String(e.day) === day);
+  if (!entry) return;
+
+  document.getElementById('pipe-input').value = entry.text;
+  currentExpectedMode = entry.expected_mode;
+  currentExpectedTags = entry.expected_tags;
+
+  const display = document.getElementById('expected-mode-display');
+  display.style.display = 'block';
+  document.getElementById('expected-mode-value').textContent = entry.expected_mode;
+  const tagsStr = entry.expected_tags ? Object.keys(entry.expected_tags).join(', ') : '';
+  document.getElementById('expected-tags-display').textContent = tagsStr ? 'Expected tags: ' + tagsStr : '';
+
+  toast('Entry loaded: ' + persona.name + ' Day ' + day);
+}
+
+// ── Batch Runners ──
+async function runPersonaBatch() {
+  const pid = document.getElementById('batch-persona-select').value;
+  if (!pid) { toast('Select a persona first', true); return; }
+
+  setLoading('btn-batch', true);
+  const container = document.getElementById('batch-results');
+  container.innerHTML = '<div class="loading">Running persona batch... This may take 1-2 minutes.</div>';
+
+  try {
+    const data = await api('/api/pipeline/persona-batch?persona_id=' + pid, { method: 'POST' });
+    let html = `<div class="card" style="margin-top:16px;">
+      <h3>${data.name} — Batch Results <span class="badge badge-db">${data.total_elapsed_ms}ms</span></h3>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;font-size:14px;">
+        <span>Accuracy: <strong style="color:${(data.mode_accuracy||0) >= 0.7 ? '#7ee787' : (data.mode_accuracy||0) >= 0.5 ? '#f0883e' : '#f85149'};">${data.mode_accuracy !== null ? (data.mode_accuracy * 100).toFixed(0) + '%' : 'N/A'}</strong> (${data.mode_matches}/${data.mode_matches + data.mode_mismatches})</span>
+        <span>Errors: <strong>${data.errors}</strong></span>
+        <span>Tone: <strong>${data.tone_preference}</strong></span>
+      </div>
+      <table>
+        <thead><tr><th>Day</th><th>Mood</th><th>Expected</th><th>Actual</th><th>Match</th><th>Key Tags</th><th>ms</th></tr></thead>
+        <tbody>`;
+
+    for (const e of data.entries) {
+      const matchColor = e.mode_match === true ? '#7ee787' : e.mode_match === false ? '#f85149' : '#8b949e';
+      const matchIcon = e.mode_match === true ? 'Y' : e.mode_match === false ? 'N' : '?';
+      const keyTags = e.tags_summary ? [
+        e.tags_summary.emotion_primary,
+        e.tags_summary.ns_state,
+        e.tags_summary.self_talk_style,
+      ].filter(Boolean).join(', ') : (e.error || 'N/A');
+
+      html += `<tr style="cursor:pointer;" onclick="toggleBatchDetail(this)">
+        <td>${e.day}</td>
+        <td>${e.mood || ''}</td>
+        <td style="font-family:monospace;font-size:11px;">${e.expected_mode || '?'}</td>
+        <td style="font-family:monospace;font-size:11px;">${e.actual_mode || 'ERR'}</td>
+        <td style="color:${matchColor};font-weight:bold;">${matchIcon}</td>
+        <td style="font-size:11px;color:#8b949e;">${keyTags}</td>
+        <td style="font-size:11px;color:#8b949e;">${e.elapsed_ms}</td>
+      </tr>
+      <tr class="batch-detail" style="display:none;">
+        <td colspan="7" style="padding:12px;">
+          <div style="font-size:12px;color:#c9d1d9;">
+            <div style="margin-bottom:8px;"><strong>Text:</strong> ${escHtml(e.text_preview)}</div>
+            ${e.tags_summary ? `
+              <div style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:8px;">
+                <span>Primary: <strong>${e.tags_summary.emotion_primary || '?'}</strong></span>
+                <span>Secondary: <strong>${e.tags_summary.emotion_secondary || '?'}</strong></span>
+                <span>Intensity: <strong>${e.tags_summary.intensity || '?'}</strong></span>
+                <span>Valence: <strong>${e.tags_summary.valence || '?'}</strong></span>
+                <span>NS: <strong>${e.tags_summary.ns_state || '?'}</strong></span>
+                <span>Self-talk: <strong>${e.tags_summary.self_talk_style || '?'}</strong> (${e.tags_summary.harshness || '?'})</span>
+                <span>Agency: <strong>${e.tags_summary.agency || '?'}</strong></span>
+                <span>Crisis: <strong style="color:${e.tags_summary.crisis_flag ? '#f85149' : '#7ee787'};">${e.tags_summary.crisis_flag}</strong></span>
+                <span>Insight overload: <strong>${e.tags_summary.insight_overload || '?'}</strong></span>
+                <span>Self-fixing: <strong>${e.tags_summary.self_fixing || '?'}</strong></span>
+                <span>Surveillance: <strong>${e.tags_summary.self_surveillance}</strong></span>
+                <span>Continuity fear: <strong>${e.tags_summary.continuity_fear}</strong></span>
+                <span>Confidence: <strong>${e.tags_summary.confidence || '?'}</strong></span>
+              </div>
+              <div style="margin-bottom:4px;"><span style="color:#8b949e;">Topics:</span> ${(e.tags_summary.topics||[]).map(t => `<span class="tag">${t}</span>`).join(' ') || 'none'}</div>
+              <div style="margin-bottom:4px;"><span style="color:#8b949e;">Distortions:</span> ${(e.tags_summary.distortions||[]).map(d => `<span class="tag">${d}</span>`).join(' ') || 'none'}</div>
+              <div style="margin-bottom:4px;"><span style="color:#8b949e;">Coping:</span> ${(e.tags_summary.coping||[]).map(c => `<span class="tag">${c}</span>`).join(' ') || 'none'}</div>
+            ` : ''}
+            ${e.actual_hints?.length ? `<div><span style="color:#8b949e;">Hints:</span> ${e.actual_hints.map(h => `<span class="tag" style="background:#d2a8ff22;color:#d2a8ff;">${h}</span>`).join(' ')}</div>` : ''}
+            ${e.retrieval_tags?.length ? `<div style="margin-top:4px;"><span style="color:#8b949e;">Retrieval tags:</span> ${e.retrieval_tags.map(t => `<span class="tag">${t}</span>`).join(' ')}</div>` : ''}
+            ${e.error ? `<div style="color:#f85149;margin-top:4px;">Error: ${escHtml(e.error)}</div>` : ''}
+          </div>
+        </td>
+      </tr>`;
+    }
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+    toast(`Batch complete: ${data.mode_accuracy !== null ? (data.mode_accuracy * 100).toFixed(0) + '%' : 'N/A'} accuracy`);
+  } catch(e) {
+    container.innerHTML = renderError('Persona Batch', e.message);
+    toast('Batch failed', true);
+  }
+  setLoading('btn-batch', false);
+}
+
+function toggleBatchDetail(row) {
+  const detail = row.nextElementSibling;
+  if (detail && detail.classList.contains('batch-detail')) {
+    detail.style.display = detail.style.display === 'none' ? 'table-row' : 'none';
+  }
+}
+
+async function runKaggleSample() {
+  const limit = parseInt(document.getElementById('kaggle-limit').value) || 10;
+  setLoading('btn-kaggle', true);
+  const container = document.getElementById('batch-results');
+  container.innerHTML = `<div class="loading">Running ${limit} Kaggle samples... This may take a while.</div>`;
+
+  try {
+    const data = await api('/api/pipeline/kaggle-sample?limit=' + limit, { method: 'POST' });
+    const avgEmo = data.avg_emotion_agreement !== null ? (data.avg_emotion_agreement * 100).toFixed(1) + '%' : 'N/A';
+    const avgTop = data.avg_topic_agreement !== null ? (data.avg_topic_agreement * 100).toFixed(1) + '%' : 'N/A';
+
+    let html = `<div class="card" style="margin-top:16px;">
+      <h3>Kaggle Validation Results <span class="badge badge-db">${data.total_elapsed_ms}ms</span></h3>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;font-size:14px;">
+        <span>Sampled: <strong>${data.total_sampled}</strong> / ${data.total_available} available</span>
+        <span>Emotion Agreement: <strong style="color:#58a6ff;">${avgEmo}</strong></span>
+        <span>Topic Agreement: <strong style="color:#d2a8ff;">${avgTop}</strong></span>
+        <span>Errors: <strong>${data.errors}</strong></span>
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>Text</th><th>Kaggle Emotions</th><th>Haiku Primary</th><th>Emotion %</th><th>Topic %</th><th>ms</th></tr></thead>
+        <tbody>`;
+
+    for (const e of data.entries) {
+      const emoRate = e.emotion_agreement ? (e.emotion_agreement.agreement_rate * 100).toFixed(0) + '%' : 'ERR';
+      const topRate = e.topic_agreement ? (e.topic_agreement.agreement_rate * 100).toFixed(0) + '%' : 'ERR';
+      const emoColor = e.emotion_agreement?.agreement_rate >= 0.8 ? '#7ee787' : e.emotion_agreement?.agreement_rate >= 0.5 ? '#f0883e' : '#f85149';
+      const kaggleEmos = Object.keys(e.kaggle_emotions).join(', ');
+
+      html += `<tr style="cursor:pointer;" onclick="toggleBatchDetail(this)">
+        <td>${e.index}</td>
+        <td style="font-size:11px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(e.text_preview)}</td>
+        <td style="font-size:11px;">${kaggleEmos}</td>
+        <td style="font-family:monospace;font-size:11px;">${e.haiku_primary || 'ERR'}</td>
+        <td style="color:${emoColor};font-weight:bold;">${emoRate}</td>
+        <td style="font-weight:bold;">${topRate}</td>
+        <td style="font-size:11px;color:#8b949e;">${e.elapsed_ms}</td>
+      </tr>
+      <tr class="batch-detail" style="display:none;">
+        <td colspan="7" style="padding:12px;font-size:12px;">
+          <div style="margin-bottom:6px;"><strong>Full text:</strong> ${escHtml(e.text_preview)}</div>
+          <div style="margin-bottom:4px;"><span style="color:#8b949e;">Kaggle emotions:</span> ${Object.keys(e.kaggle_emotions).map(k => `<span class="tag">${k}</span>`).join(' ') || 'none'}</div>
+          <div style="margin-bottom:4px;"><span style="color:#8b949e;">Kaggle topics:</span> ${Object.keys(e.kaggle_topics).map(k => `<span class="tag">${k}</span>`).join(' ') || 'none'}</div>
+          <div style="margin-bottom:4px;"><span style="color:#8b949e;">Haiku:</span> primary=<strong>${e.haiku_primary||'?'}</strong> secondary=<strong>${e.haiku_secondary||'?'}</strong> blend=${(e.haiku_blend||[]).join(', ')||'none'}</div>
+          <div><span style="color:#8b949e;">Haiku topics:</span> ${(e.haiku_topics||[]).map(t => `<span class="tag">${t}</span>`).join(' ') || 'none'}</div>
+          ${e.error ? `<div style="color:#f85149;margin-top:4px;">Error: ${escHtml(e.error)}</div>` : ''}
+        </td>
+      </tr>`;
+    }
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+    toast(`Kaggle: ${avgEmo} emotion, ${avgTop} topic agreement`);
+  } catch(e) {
+    container.innerHTML = renderError('Kaggle Sample', e.message);
+    toast('Kaggle run failed', true);
+  }
+  setLoading('btn-kaggle', false);
+}
+
+// ── Pipeline Debugger ──
+let lastTags = null;
+let lastMode = null;
+let lastHints = [];
+let lastScenarios = [];
+
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (loading) {
+    btn.dataset.origText = btn.textContent;
+    btn.textContent = 'Running...';
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+  } else {
+    btn.textContent = btn.dataset.origText || btn.textContent;
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }
+}
+
+async function runFullPipeline() {
+  const raw = document.getElementById('pipe-input').value.trim();
+  if (!raw) { toast('Enter a journal entry first', true); return; }
+
+  setLoading('btn-full', true);
+  const container = document.getElementById('pipe-results');
+  container.innerHTML = '<div class="loading">Running full pipeline... This may take 10-20 seconds.</div>';
+
+  try {
+    const data = await api('/api/pipeline/full', {
+      method: 'POST',
+      body: JSON.stringify({
+        raw_text: raw,
+        language: document.getElementById('pipe-lang').value,
+        tone_preference: document.getElementById('pipe-tone').value,
+        main_focus: document.getElementById('pipe-focus').value,
+      })
+    });
+
+    lastTags = data.steps.tag.tags;
+    lastMode = data.steps.mode.mode;
+    lastHints = data.steps.mode.hints;
+    lastScenarios = data.steps.retrieve.scenarios_matched;
+
+    const modeMatch = currentExpectedMode ? (data.steps.mode.mode === currentExpectedMode) : null;
+    const matchBorder = modeMatch === true ? '#238636' : modeMatch === false ? '#da3633' : '#238636';
+    const matchText = modeMatch === true ? ' (matches expected)' : modeMatch === false ? ` (expected: ${currentExpectedMode})` : '';
+
+    let html = `<div class="card" style="background:#0d1117;border-color:${matchBorder};">
+      <h3 style="color:${modeMatch === false ? '#f85149' : '#7ee787'};">Pipeline Complete <span class="badge badge-db">${data.total_elapsed_ms}ms total</span>${matchText}</h3>
+    </div>`;
+
+    // Step 1: Tags
+    html += renderTagStep(data.steps.tag);
+
+    // Step 2: Mode
+    html += renderModeStep(data.steps.mode);
+
+    // Step 3: Retrieve
+    html += renderRetrieveStep(data.steps.retrieve);
+
+    // Step 4: Respond
+    html += renderRespondStep(data.steps.respond);
+
+    container.innerHTML = html;
+    toast('Pipeline complete in ' + data.total_elapsed_ms + 'ms');
+  } catch(e) {
+    container.innerHTML = `<div class="card" style="border-color:#da3633;"><h3 style="color:#f85149;">Pipeline Failed</h3><pre style="color:#f85149;white-space:pre-wrap;">${escHtml(e.message)}</pre></div>`;
+    toast('Pipeline failed', true);
+  }
+  setLoading('btn-full', false);
+}
+
+async function runStep(step) {
+  const raw = document.getElementById('pipe-input').value.trim();
+  const container = document.getElementById('pipe-results');
+
+  if (step === 'tag') {
+    if (!raw) { toast('Enter a journal entry first', true); return; }
+    setLoading('btn-tag', true);
+    container.innerHTML = '<div class="loading">Running tagging...</div>';
+    try {
+      const data = await api('/api/pipeline/tag', {
+        method: 'POST',
+        body: JSON.stringify({ raw_text: raw, language: document.getElementById('pipe-lang').value })
+      });
+      lastTags = data.tags;
+      container.innerHTML = renderTagStep(data);
+      toast('Tagging complete in ' + data.elapsed_ms + 'ms');
+    } catch(e) {
+      container.innerHTML = renderError('Tag', e.message);
+      toast('Tagging failed', true);
+    }
+    setLoading('btn-tag', false);
+
+  } else if (step === 'mode') {
+    if (!lastTags) { toast('Run Tag first', true); return; }
+    setLoading('btn-mode', true);
+    try {
+      const data = await api('/api/pipeline/mode', {
+        method: 'POST',
+        body: JSON.stringify({ tags: lastTags, tone_preference: document.getElementById('pipe-tone').value })
+      });
+      lastMode = data.mode;
+      lastHints = data.hints;
+      container.innerHTML = renderModeStep(data);
+      toast('Mode: ' + data.mode);
+    } catch(e) {
+      container.innerHTML = renderError('Mode', e.message);
+    }
+    setLoading('btn-mode', false);
+
+  } else if (step === 'retrieve') {
+    if (!lastTags) { toast('Run Tag first', true); return; }
+    setLoading('btn-retrieve', true);
+    try {
+      const data = await api('/api/pipeline/retrieve', {
+        method: 'POST',
+        body: JSON.stringify({ tags: lastTags })
+      });
+      lastScenarios = data.scenarios_matched;
+      container.innerHTML = renderRetrieveStep(data);
+      toast(data.scenario_count + ' scenarios matched');
+    } catch(e) {
+      container.innerHTML = renderError('Retrieve', e.message);
+    }
+    setLoading('btn-retrieve', false);
+
+  } else if (step === 'respond') {
+    if (!lastTags || !lastMode) { toast('Run Tag and Mode first', true); return; }
+    if (!raw) { toast('Enter a journal entry first', true); return; }
+    setLoading('btn-respond', true);
+    container.innerHTML = '<div class="loading">Generating response...</div>';
+    try {
+      const data = await api('/api/pipeline/respond', {
+        method: 'POST',
+        body: JSON.stringify({
+          raw_text: raw,
+          tags: lastTags,
+          mode: lastMode,
+          hints: lastHints,
+          scenarios: lastScenarios || [],
+          recent_context: 'No recent context (debug mode).',
+          main_focus: document.getElementById('pipe-focus').value,
+          tone_preference: document.getElementById('pipe-tone').value,
+        })
+      });
+      container.innerHTML = renderRespondStep(data);
+      toast('Response generated in ' + data.elapsed_ms + 'ms');
+    } catch(e) {
+      container.innerHTML = renderError('Respond', e.message);
+    }
+    setLoading('btn-respond', false);
+  }
+}
+
+function renderTagStep(data) {
+  const tags = data.tags;
+  const elapsed = data.elapsed_ms;
+  // Key fields summary
+  const summary = [
+    `Primary: <strong>${tags.emotions?.primary || 'null'}</strong>`,
+    `Secondary: <strong>${tags.emotions?.secondary || 'null'}</strong>`,
+    `Valence: <strong>${tags.emotions?.valence || 'null'}</strong>`,
+    `Intensity: <strong>${tags.emotions?.intensity || 'null'}</strong>`,
+    `NS State: <strong>${tags.nervous_system?.state || 'null'}</strong>`,
+    `Self-talk: <strong>${tags.self_talk?.style || 'null'}</strong> (${tags.self_talk?.harshness_level || '?'}/5)`,
+    `Crisis: <strong style="color:${tags.risk?.crisis_flag ? '#f85149' : '#7ee787'}">${tags.risk?.crisis_flag}</strong>`,
+    `Topics: <strong>${(tags.topics || []).join(', ') || 'none'}</strong>`,
+    `Confidence: <strong>${tags.confidence?.overall || '?'}</strong>`,
+  ];
+
+  let html = `<div class="card">
+    <h3>Step 1: Tagging <span class="badge badge-db">${elapsed}ms</span></h3>
+    <div style="display:flex;flex-wrap:wrap;gap:8px 20px;margin-bottom:12px;font-size:13px;color:#c9d1d9;">
+      ${summary.map(s => `<span>${s}</span>`).join('')}
+    </div>`;
+
+  // Emotions blend
+  if (tags.emotions?.blend?.length) {
+    html += `<div style="margin-bottom:8px;"><span style="color:#8b949e;font-size:12px;">Blend: </span><span class="tag-list">${tags.emotions.blend.map(e => `<span class="tag">${e}</span>`).join('')}</span></div>`;
+  }
+
+  // Coping
+  if (tags.coping?.mechanisms?.length) {
+    html += `<div style="margin-bottom:8px;"><span style="color:#8b949e;font-size:12px;">Coping: </span><span class="tag-list">${tags.coping.mechanisms.map(m => `<span class="tag">${m}</span>`).join('')}</span> <span style="color:#8b949e;font-size:12px;margin-left:8px;">Function: ${tags.coping.function || '?'} | Cost: ${tags.coping.cost_signal || '?'}</span></div>`;
+  }
+
+  // Cognition
+  if (tags.cognition?.distortions?.length) {
+    html += `<div style="margin-bottom:8px;"><span style="color:#8b949e;font-size:12px;">Distortions: </span><span class="tag-list">${tags.cognition.distortions.map(d => `<span class="tag">${d}</span>`).join('')}</span></div>`;
+  }
+  if (tags.cognition?.loops?.length) {
+    html += `<div style="margin-bottom:8px;"><span style="color:#8b949e;font-size:12px;">Loops: </span><span class="tag-list">${tags.cognition.loops.map(l => `<span class="tag">${l}</span>`).join('')}</span></div>`;
+  }
+
+  // Load, Continuity, Orientation
+  html += `<div style="display:flex;flex-wrap:wrap;gap:8px 20px;margin-bottom:12px;font-size:12px;color:#8b949e;">
+    <span>Insight overload: <strong style="color:#c9d1d9;">${tags.load?.insight_overload_risk || '?'}</strong></span>
+    <span>Self-fixing: <strong style="color:#c9d1d9;">${tags.load?.self_fixing_pressure || '?'}</strong></span>
+    <span>Surveillance: <strong style="color:#c9d1d9;">${tags.load?.self_surveillance_present}</strong></span>
+    <span>Continuity fear: <strong style="color:#c9d1d9;">${tags.continuity?.continuity_fear_present}</strong></span>
+    <span>Container needed: <strong style="color:#c9d1d9;">${tags.continuity?.external_container_needed}</strong></span>
+    <span>Agency: <strong style="color:#c9d1d9;">${tags.orientation?.agency_level || '?'}</strong></span>
+    <span>Time focus: <strong style="color:#c9d1d9;">${tags.orientation?.time_focus || '?'}</strong></span>
+  </div>`;
+
+  // Collapsible full JSON + prompt
+  html += `<div style="margin-top:8px;">
+    <h4 style="color:#58a6ff;font-size:13px;cursor:pointer;" onclick="this.nextElementSibling.classList.toggle('open')">Full Tags JSON (click to expand)</h4>
+    <div class="collapsible-content"><pre style="background:#0d1117;padding:12px;border-radius:6px;font-size:11px;overflow-x:auto;color:#c9d1d9;max-height:400px;overflow-y:auto;">${escHtml(JSON.stringify(tags, null, 2))}</pre></div>
+  </div>`;
+
+  if (data.prompt_sent) {
+    html += `<div style="margin-top:8px;">
+      <h4 style="color:#58a6ff;font-size:13px;cursor:pointer;" onclick="this.nextElementSibling.classList.toggle('open')">Prompt Sent to Haiku (click to expand)</h4>
+      <div class="collapsible-content">
+        <div style="margin-bottom:8px;"><strong style="color:#d2a8ff;font-size:12px;">SYSTEM:</strong><pre style="background:#0d1117;padding:8px;border-radius:6px;font-size:11px;color:#c9d1d9;white-space:pre-wrap;max-height:200px;overflow-y:auto;">${escHtml(data.prompt_sent.system)}</pre></div>
+        <div style="margin-bottom:8px;"><strong style="color:#d2a8ff;font-size:12px;">DEVELOPER:</strong><pre style="background:#0d1117;padding:8px;border-radius:6px;font-size:11px;color:#c9d1d9;white-space:pre-wrap;max-height:200px;overflow-y:auto;">${escHtml(data.prompt_sent.developer)}</pre></div>
+        <div><strong style="color:#d2a8ff;font-size:12px;">USER:</strong><pre style="background:#0d1117;padding:8px;border-radius:6px;font-size:11px;color:#c9d1d9;white-space:pre-wrap;max-height:200px;overflow-y:auto;">${escHtml(data.prompt_sent.user)}</pre></div>
+      </div>
+    </div>`;
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function renderModeStep(data) {
+  const mode = data.mode;
+  const hints = data.hints || [];
+  const fields = data.input_key_fields || data.input?.key_fields || {};
+
+  const modeColors = {
+    CRISIS_OVERRIDE: '#f85149', SOFT_LANDING: '#f0883e', NO_MORE_HOMEWORK: '#d2a8ff',
+    CONTINUITY_KEEPER: '#58a6ff', INTEGRATION: '#a5d6ff', CLEAN_MIRROR: '#7ee787', DEFAULT_REFLECT: '#8b949e'
+  };
+  const color = modeColors[mode] || '#c9d1d9';
+
+  let html = `<div class="card">
+    <h3>Step 2: Mode Selection <span class="badge" style="background:${color}22;color:${color};">${mode}</span></h3>`;
+
+  if (hints.length) {
+    html += `<div style="margin-bottom:12px;"><span style="color:#8b949e;font-size:12px;">Hints: </span>${hints.map(h => `<span class="tag" style="background:#d2a8ff22;color:#d2a8ff;">${h}</span>`).join(' ')}</div>`;
+  }
+
+  // Show key fields used in decision
+  html += `<div style="margin-top:8px;">
+    <h4 style="color:#58a6ff;font-size:13px;cursor:pointer;" onclick="this.nextElementSibling.classList.toggle('open')">Fields Used in Decision (click to expand)</h4>
+    <div class="collapsible-content"><pre style="background:#0d1117;padding:12px;border-radius:6px;font-size:11px;overflow-x:auto;color:#c9d1d9;">${escHtml(JSON.stringify(fields, null, 2))}</pre></div>
+  </div>`;
+
+  html += '</div>';
+  return html;
+}
+
+function renderRetrieveStep(data) {
+  const elapsed = data.elapsed_ms;
+  const tags = data.retrieval_tags_extracted || [];
+  const scenarios = data.scenarios_matched || [];
+
+  let html = `<div class="card">
+    <h3>Step 3: Retrieval <span class="badge badge-db">${elapsed}ms &middot; ${scenarios.length} scenarios</span></h3>`;
+
+  html += `<div style="margin-bottom:12px;"><span style="color:#8b949e;font-size:12px;">Retrieval tags extracted (${tags.length}): </span><div class="tag-list" style="margin-top:4px;">${tags.map(t => `<span class="tag">${t}</span>`).join('')}</div></div>`;
+
+  if (scenarios.length) {
+    html += '<div style="margin-top:8px;">';
+    for (let i = 0; i < scenarios.length; i++) {
+      html += `<div class="rule-block"><h4>Scenario ${i+1}</h4><pre style="color:#c9d1d9;font-size:12px;white-space:pre-wrap;">${escHtml(scenarios[i])}</pre></div>`;
+    }
+    html += '</div>';
+  } else {
+    html += '<p style="color:#8b949e;font-size:13px;">No scenarios matched.</p>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function renderRespondStep(data) {
+  const elapsed = data.elapsed_ms;
+
+  let html = `<div class="card">
+    <h3>Step 4: Response <span class="badge badge-db">${elapsed}ms &middot; ${data.model_used} &middot; ${data.input_tokens}+${data.output_tokens} tokens</span></h3>
+    <div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px;margin-bottom:12px;font-size:14px;line-height:1.7;color:#e1e4e8;white-space:pre-wrap;">${escHtml(data.response_text)}</div>`;
+
+  if (data.prompt_sent) {
+    html += `<div style="margin-top:8px;">
+      <h4 style="color:#58a6ff;font-size:13px;cursor:pointer;" onclick="this.nextElementSibling.classList.toggle('open')">Prompt Sent to Sonnet (click to expand)</h4>
+      <div class="collapsible-content">
+        <div style="margin-bottom:8px;"><strong style="color:#d2a8ff;font-size:12px;">SYSTEM:</strong><pre style="background:#0d1117;padding:8px;border-radius:6px;font-size:11px;color:#c9d1d9;white-space:pre-wrap;max-height:200px;overflow-y:auto;">${escHtml(data.prompt_sent.system)}</pre></div>
+        <div style="margin-bottom:8px;"><strong style="color:#d2a8ff;font-size:12px;">DEVELOPER:</strong><pre style="background:#0d1117;padding:8px;border-radius:6px;font-size:11px;color:#c9d1d9;white-space:pre-wrap;max-height:200px;overflow-y:auto;">${escHtml(data.prompt_sent.developer)}</pre></div>
+        <div><strong style="color:#d2a8ff;font-size:12px;">USER:</strong><pre style="background:#0d1117;padding:8px;border-radius:6px;font-size:11px;color:#c9d1d9;white-space:pre-wrap;max-height:400px;overflow-y:auto;">${escHtml(data.prompt_sent.user)}</pre></div>
+      </div>
+    </div>`;
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function renderError(step, message) {
+  return `<div class="card" style="border-color:#da3633;"><h3 style="color:#f85149;">${step} Failed</h3><pre style="color:#f85149;white-space:pre-wrap;font-size:12px;">${escHtml(message)}</pre></div>`;
+}
+
+// Auto-login if token exists
+if (TOKEN) {
+  api('/api/config').then(() => showApp()).catch(() => {
+    TOKEN = '';
+    localStorage.removeItem('st_admin_token');
+  });
+}
+</script>
+</body>
+</html>

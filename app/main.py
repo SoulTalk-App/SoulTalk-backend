@@ -15,8 +15,10 @@ from app.api.transcription import router as transcription_router
 from app.api.prompts import router as prompts_router
 from app.api.ws import router as ws_router
 from app.api.ai_profile import router as ai_profile_router
-from app.db.session import engine
+from app.api.admin import router as admin_router
+from app.db.session import engine, async_session_maker
 from app.db.base import Base
+from app.services.ai.config_service import config_service
 
 
 # Configure logging — force=True ensures our config takes effect
@@ -41,6 +43,8 @@ async def lifespan(app: FastAPI):
     if settings.ENVIRONMENT != "production":
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+
+    await config_service.init(async_session_maker)
 
     yield
 
@@ -82,6 +86,7 @@ app.include_router(transcription_router, prefix="/api/transcription", tags=["Tra
 app.include_router(prompts_router, prefix="/api/prompts", tags=["Prompts"])
 app.include_router(ai_profile_router, prefix="/api/profile/ai-preferences", tags=["AI Profile"])
 app.include_router(ws_router, tags=["WebSocket"])
+app.include_router(admin_router, prefix="/admin", tags=["Admin"])
 
 
 @app.get("/")

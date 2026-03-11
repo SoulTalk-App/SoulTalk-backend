@@ -9,6 +9,7 @@ from anthropic import AsyncAnthropic
 from app.core.config import settings
 from app.services.ai_schemas.tags_v1 import TagsV1
 from app.services.ai.safety import validate_tags
+from app.services.ai.config_service import ALL_DEFAULTS
 from app.services.ai_prompts.tagging import (
     TAGGING_SYSTEM_PROMPT,
     TAGGING_DEVELOPER_MESSAGE,
@@ -103,6 +104,7 @@ class TaggingService:
                     content = content[:-3].strip()
 
             data = json.loads(content)
+            data = self._normalize(data)
             return TagsV1.model_validate(data)
 
         except json.JSONDecodeError as e:
@@ -111,6 +113,88 @@ class TaggingService:
         except Exception as e:
             logger.error(f"[Tagging] Validation error: {type(e).__name__}: {e}")
             return None
+
+
+    # ── Valid enum values for normalization ──
+    _VALID_EMOTIONS = {
+        "joy", "calm", "contentment", "gratitude", "hope", "curiosity", "inspiration",
+        "sadness", "grief", "loneliness", "fear", "anxiety", "dread",
+        "anger", "frustration", "resentment", "shame", "guilt", "unworthiness",
+        "numbness", "emptiness", "overwhelm",
+    }
+
+    def _normalize(self, data: dict) -> dict:
+        """Fix common Haiku output issues before Pydantic validation."""
+
+        # Fix schema_version
+        if data.get("schema_version") != "v1":
+            data["schema_version"] = "v1"
+
+        # Load emotion aliases
+        try:
+            from app.services.ai.config_service import config_service
+            alias_json = config_service.get("alias", "emotion_aliases")
+            aliases = json.loads(alias_json) if alias_json else {}
+        except Exception:
+            aliases = json.loads(ALL_DEFAULTS.get("alias", {}).get("emotion_aliases", "{}"))
+
+        def normalize_emotion(val):
+            if not val or not isinstance(val, str):
+                return val
+            val = val.lower().strip()
+            if val in self._VALID_EMOTIONS:
+                return val
+            return aliases.get(val, None)
+
+        # Emotions
+        emotions = data.get("emotions", {})
+        if isinstance(emotions, dict):
+            # secondary: list → first valid string
+            if isinstance(emotions.get("secondary"), list):
+                for item in emotions["secondary"]:
+                    normed = normalize_emotion(item)
+                    if normed:
+                        emotions["secondary"] = normed
+                        break
+                else:
+                    emotions["secondary"] = None
+                if isinstance(emotions.get("secondary"), list):
+                    emotions["secondary"] = None
+
+            # Normalize primary/secondary through aliases
+            emotions["primary"] = normalize_emotion(emotions.get("primary"))
+            if isinstance(emotions.get("secondary"), str):
+                emotions["secondary"] = normalize_emotion(emotions.get("secondary"))
+
+            # blend: filter invalid values, apply aliases
+            if isinstance(emotions.get("blend"), list):
+                normed_blend = []
+                for item in emotions["blend"]:
+                    n = normalize_emotion(item)
+                    if n and n not in normed_blend:
+                        normed_blend.append(n)
+                emotions["blend"] = normed_blend[:5]
+
+        # Coping function: list → first string
+        coping = data.get("coping", {})
+        if isinstance(coping, dict):
+            if isinstance(coping.get("function"), list):
+                coping["function"] = coping["function"][0] if coping["function"] else "unknown"
+            # mechanisms: string → list
+            if isinstance(coping.get("mechanisms"), str):
+                coping["mechanisms"] = [coping["mechanisms"]]
+
+        # Self-talk style: list → first string
+        self_talk = data.get("self_talk", {})
+        if isinstance(self_talk, dict):
+            if isinstance(self_talk.get("style"), list):
+                self_talk["style"] = self_talk["style"][0] if self_talk["style"] else "mixed"
+
+        # Topics: string → list
+        if isinstance(data.get("topics"), str):
+            data["topics"] = [data["topics"]]
+
+        return data
 
 
 tagging_service = TaggingService()
