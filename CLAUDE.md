@@ -36,6 +36,7 @@ app/
 │   ├── auth.py          # POST register/login/refresh/logout, GET/PUT /me, OTP verify, password reset
 │   ├── social_auth.py   # POST google/facebook login, link/unlink accounts
 │   ├── journal.py       # CRUD /api/journal, background AI pipeline, tags/response joins
+│   ├── admin.py         # Admin dashboard: config CRUD, playbooks, pipeline debugger, usage tracking
 │   ├── ai_profile.py    # GET/PUT /api/profile/ai-preferences
 │   ├── mood.py          # PUT/GET /api/mood/today (daily mood bar)
 │   ├── streak.py        # GET /api/streak
@@ -57,7 +58,10 @@ app/
 │   ├── soulsight.py         # Soulsight (window dates, status, content, aggregate_stats)
 │   ├── scenario_playbook.py # ScenarioPlaybook (String PK, ARRAY retrieval_tags)
 │   ├── daily_aggregate.py   # DailyAggregate (JSONB distributions)
-│   └── user_ai_profile.py   # UserAIProfile (tone_preference, spiritual_metadata, soulpal_name)
+│   ├── user_ai_profile.py   # UserAIProfile (tone_preference, spiritual_metadata, soulpal_name)
+│   ├── ai_config.py         # AIConfig (category+key unique, Text value, in-memory cached)
+│   ├── prompt_version.py    # PromptVersion (prompt_key, value, created_at for audit trail)
+│   └── api_usage_log.py     # APIUsageLog (model, service, token counts, estimated cost)
 ├── schemas/
 │   ├── auth.py          # Registration, Login, OTP, password reset schemas
 │   ├── user.py          # UserResponse, UserUpdate, LinkedAccountResponse
@@ -89,12 +93,14 @@ app/
     │   └── scenario_playbooks.json  # 20 curated coaching scenarios (ST-SCEN-001 to 020)
     └── ai/
         ├── safety.py            # validate_tags(), is_crisis(), generate_safety_redirect()
-        ├── tagging_service.py   # Haiku structured extraction with JSON retry
+        ├── tagging_service.py   # Haiku structured extraction with JSON retry + output normalizer
         ├── embedding_service.py # Voyage AI AsyncClient wrapper
         ├── mode_selector.py     # Pure Python rules engine (7 modes, 4 hints)
         ├── retrieval_service.py # Scenario matching (SQL array overlap) + pgvector cosine similarity
         ├── response_service.py  # Sonnet coaching response generation
-        └── pipeline.py          # 6-step orchestrator: tag → embed → mode → retrieve → respond → complete
+        ├── pipeline.py          # 6-step orchestrator: tag → embed → mode → retrieve → respond → complete
+        ├── config_service.py    # ConfigService singleton: in-memory cache backed by ai_config DB table
+        └── usage_tracker.py     # record_usage() — logs every API call to api_usage_log with cost estimate
 ```
 
 ### AI Pipeline (5 steps per journal entry)
@@ -135,6 +141,8 @@ app/
 014: user_ai_profiles (tone_preference, spiritual_metadata, soulpal_name)
 015: Clean journal_entries (drop legacy AI columns, add ai_processing_status/error/started_at)
 016: Seed 20 scenario playbooks from JSON
+017: ai_config (category+key unique) and prompt_versions tables
+018: api_usage_log (model, service, token counts, estimated cost, timestamp)
 
 ### API Routes
 | Prefix | Tag | Key endpoints |
@@ -149,10 +157,12 @@ app/
 | /api/transcription | Transcription | POST / (file upload) |
 | /api/prompts | Prompts | GET / (5 random prompts) |
 | /ws | WebSocket | JWT auth, ping keepalive, pushes journal_ai_complete events |
+| /admin | Admin | Dashboard UI, config CRUD, playbook management, pipeline debugger, persona/Kaggle batch testing, API usage tracking |
 
 ### Environment (.env)
 Required: `DATABASE_URL`, `JWT_SECRET`, `SECRET_KEY`
 AI pipeline: `ANTHROPIC_API_KEY`, `VOYAGE_API_KEY`
+Admin: `ADMIN_PASSCODE` (default: `soultalk-admin`)
 Optional: `SMTP_*`, `GOOGLE_CLIENT_ID`, `FACEBOOK_APP_*`
 Default DB URL format: `postgresql+asyncpg://user:pass@host:port/dbname`
 
