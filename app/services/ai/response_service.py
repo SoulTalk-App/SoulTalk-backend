@@ -12,6 +12,7 @@ from app.core.config import settings
 from app.services.ai_schemas.tags_v1 import TagsV1
 from app.services.ai.mode_selector import ModeResult
 from app.services.ai.safety import is_crisis, generate_safety_redirect
+from app.services.ai.usage_tracker import record_usage
 from app.services.ai_prompts.response import (
     RESPONSE_SYSTEM_PROMPT,
     RESPONSE_DEVELOPER_MESSAGE,
@@ -97,6 +98,13 @@ class ResponseService:
             temperature=0.7,
         )
         elapsed_ms = int((time.monotonic() - start) * 1000)
+
+        await record_usage(
+            model=settings.ANTHROPIC_RESPONSE_MODEL,
+            service="response",
+            input_tokens=response.usage.input_tokens,
+            output_tokens=response.usage.output_tokens,
+        )
 
         if not response.content:
             raise ValueError("Anthropic returned no content for response generation")

@@ -12,6 +12,9 @@ from app.models.soulsight import Soulsight
 from app.models.scenario_playbook import ScenarioPlaybook
 from app.models.daily_aggregate import DailyAggregate
 from app.models.user_ai_profile import UserAIProfile
+from app.models.ai_config import AIConfig
+from app.models.prompt_version import PromptVersion
+from app.models.api_usage_log import APIUsageLog
 
 __all__ = [
     "User",
@@ -29,4 +32,7 @@ __all__ = [
     "ScenarioPlaybook",
     "DailyAggregate",
     "UserAIProfile",
+    "AIConfig",
+    "PromptVersion",
+    "APIUsageLog",
 ]

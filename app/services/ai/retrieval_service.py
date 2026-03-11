@@ -63,10 +63,10 @@ class RetrievalService:
             SELECT id, title, signals, coaching_moves, avoid_list, micro_actions, example_lines
             FROM scenario_playbooks
             WHERE is_active = true
-              AND retrieval_tags && :entry_tags
+              AND retrieval_tags && CAST(:entry_tags AS text[])
             ORDER BY
               cardinality(ARRAY(
-                SELECT unnest(retrieval_tags) INTERSECT SELECT unnest(:entry_tags_2)
+                SELECT unnest(retrieval_tags) INTERSECT SELECT unnest(CAST(:entry_tags_2 AS text[]))
               )) DESC,
               priority ASC
             LIMIT :limit
