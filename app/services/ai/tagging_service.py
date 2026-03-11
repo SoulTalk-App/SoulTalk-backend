@@ -9,7 +9,6 @@ from anthropic import AsyncAnthropic
 from app.core.config import settings
 from app.services.ai_schemas.tags_v1 import TagsV1
 from app.services.ai.safety import validate_tags
-from app.services.ai.config_service import ALL_DEFAULTS
 from app.services.ai_prompts.tagging import (
     TAGGING_SYSTEM_PROMPT,
     TAGGING_DEVELOPER_MESSAGE,
@@ -109,88 +108,108 @@ class TaggingService:
 
         except json.JSONDecodeError as e:
             logger.error(f"[Tagging] JSON parse error: {e}")
+            logger.debug(f"[Tagging] Raw content: {content[:500]}")
             return None
         except Exception as e:
             logger.error(f"[Tagging] Validation error: {type(e).__name__}: {e}")
+            logger.info(f"[Tagging] Failed JSON keys: {list(data.keys()) if 'data' in dir() else 'N/A'}")
             return None
 
+    @staticmethod
+    def _normalize(data: dict) -> dict:
+        """Fix common Haiku output quirks before Pydantic validation.
 
-    # ── Valid enum values for normalization ──
-    _VALID_EMOTIONS = {
-        "joy", "calm", "contentment", "gratitude", "hope", "curiosity", "inspiration",
-        "sadness", "grief", "loneliness", "fear", "anxiety", "dread",
-        "anger", "frustration", "resentment", "shame", "guilt", "unworthiness",
-        "numbness", "emptiness", "overwhelm",
-    }
+        Haiku consistently:
+        - Returns schema_version as the schema name instead of "v1"
+        - Returns lists for single-value fields (secondary, coping.function)
+        - Puts somatic cues in the emotion blend list
+        - Returns invalid emotion values (relief, exhaustion, hopelessness, etc.)
+        """
+        # Force schema_version
+        data["schema_version"] = "v1"
 
-    def _normalize(self, data: dict) -> dict:
-        """Fix common Haiku output issues before Pydantic validation."""
+        # Valid emotion values for filtering
+        valid_emotions = {
+            "joy", "calm", "contentment", "gratitude", "hope", "curiosity",
+            "inspiration", "sadness", "grief", "loneliness", "fear", "anxiety",
+            "dread", "anger", "frustration", "resentment", "shame", "guilt",
+            "unworthiness", "numbness", "emptiness", "overwhelm",
+        }
 
-        # Fix schema_version
-        if data.get("schema_version") != "v1":
-            data["schema_version"] = "v1"
+        # Map common invalid emotions Haiku produces to valid ones
+        emotion_aliases = {
+            "relief": "calm",
+            "exhaustion": "numbness",
+            "hopelessness": "dread",
+            "despair": "grief",
+            "confusion": "overwhelm",
+            "disappointment": "sadness",
+            "irritation": "frustration",
+            "nervousness": "anxiety",
+            "panic": "dread",
+            "boredom": "emptiness",
+            "excitement": "joy",
+            "love": "gratitude",
+            "compassion": "contentment",
+            "pride": "joy",
+            "nostalgia": "sadness",
+            "regret": "guilt",
+            "jealousy": "resentment",
+            "envy": "resentment",
+            "stress": "anxiety",
+            "tension": "anxiety",
+            "worry": "anxiety",
+            "melancholy": "sadness",
+            "apathy": "numbness",
+            "resignation": "numbness",
+            "ambivalence": "numbness",
+            "determination": "hope",
+            "acceptance": "calm",
+            "peace": "calm",
+            "satisfaction": "contentment",
+            "awe": "inspiration",
+            "wonder": "curiosity",
+        }
 
-        # Load emotion aliases
-        try:
-            from app.services.ai.config_service import config_service
-            alias_json = config_service.get("alias", "emotion_aliases")
-            aliases = json.loads(alias_json) if alias_json else {}
-        except Exception:
-            aliases = json.loads(ALL_DEFAULTS.get("alias", {}).get("emotion_aliases", "{}"))
-
-        def normalize_emotion(val):
-            if not val or not isinstance(val, str):
+        def _fix_emotion(val: str) -> str | None:
+            if val in valid_emotions:
                 return val
-            val = val.lower().strip()
-            if val in self._VALID_EMOTIONS:
-                return val
-            return aliases.get(val, None)
+            return emotion_aliases.get(val)
 
-        # Emotions
         emotions = data.get("emotions", {})
-        if isinstance(emotions, dict):
-            # secondary: list → first valid string
-            if isinstance(emotions.get("secondary"), list):
-                for item in emotions["secondary"]:
-                    normed = normalize_emotion(item)
-                    if normed:
-                        emotions["secondary"] = normed
-                        break
-                else:
-                    emotions["secondary"] = None
-                if isinstance(emotions.get("secondary"), list):
-                    emotions["secondary"] = None
 
-            # Normalize primary/secondary through aliases
-            emotions["primary"] = normalize_emotion(emotions.get("primary"))
-            if isinstance(emotions.get("secondary"), str):
-                emotions["secondary"] = normalize_emotion(emotions.get("secondary"))
+        # primary: fix invalid values
+        if emotions.get("primary") and emotions["primary"] not in valid_emotions:
+            emotions["primary"] = _fix_emotion(emotions["primary"])
 
-            # blend: filter invalid values, apply aliases
-            if isinstance(emotions.get("blend"), list):
-                normed_blend = []
-                for item in emotions["blend"]:
-                    n = normalize_emotion(item)
-                    if n and n not in normed_blend:
-                        normed_blend.append(n)
-                emotions["blend"] = normed_blend[:5]
+        # secondary: list -> first valid item, or fix invalid string
+        if isinstance(emotions.get("secondary"), list):
+            mapped = [_fix_emotion(e) for e in emotions["secondary"]]
+            valid = [e for e in mapped if e]
+            emotions["secondary"] = valid[0] if valid else None
+        elif emotions.get("secondary") and emotions["secondary"] not in valid_emotions:
+            emotions["secondary"] = _fix_emotion(emotions["secondary"])
 
-        # Coping function: list → first string
+        # blend: filter to valid emotions only (with alias mapping)
+        if isinstance(emotions.get("blend"), list):
+            mapped = [_fix_emotion(e) for e in emotions["blend"]]
+            emotions["blend"] = [e for e in mapped if e]
+
+        # coping.function: list -> first item
         coping = data.get("coping", {})
-        if isinstance(coping, dict):
-            if isinstance(coping.get("function"), list):
-                coping["function"] = coping["function"][0] if coping["function"] else "unknown"
-            # mechanisms: string → list
-            if isinstance(coping.get("mechanisms"), str):
-                coping["mechanisms"] = [coping["mechanisms"]]
+        if isinstance(coping.get("function"), list):
+            coping["function"] = coping["function"][0] if coping["function"] else None
 
-        # Self-talk style: list → first string
+        # coping.mechanisms: ensure it's a list
+        if isinstance(coping.get("mechanisms"), str):
+            coping["mechanisms"] = [coping["mechanisms"]]
+
+        # self_talk.style: list -> first item
         self_talk = data.get("self_talk", {})
-        if isinstance(self_talk, dict):
-            if isinstance(self_talk.get("style"), list):
-                self_talk["style"] = self_talk["style"][0] if self_talk["style"] else "mixed"
+        if isinstance(self_talk.get("style"), list):
+            self_talk["style"] = self_talk["style"][0] if self_talk["style"] else "mixed"
 
-        # Topics: string → list
+        # topics: ensure it's a list
         if isinstance(data.get("topics"), str):
             data["topics"] = [data["topics"]]
 

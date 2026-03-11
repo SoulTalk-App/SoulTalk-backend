@@ -51,35 +51,40 @@ def _select_primary_mode(tags: TagsV1, tone_preference: str) -> str:
         return "CRISIS_OVERRIDE"
 
     # 2. SOFT_LANDING
-    if ns.state == "highly_activated" and (emotions.intensity or 0) >= 4:
-        return "SOFT_LANDING"
     if ns.state in ("collapsed", "dissociated"):
         return "SOFT_LANDING"
-    if emotions.primary in ("overwhelm", "dread") and (emotions.intensity or 0) >= 4:
+    if ns.state == "highly_activated" and (emotions.intensity or 0) >= 5:
+        return "SOFT_LANDING"
+    if emotions.primary in ("overwhelm", "dread") and (emotions.intensity or 0) >= 5:
         return "SOFT_LANDING"
 
-    # 3. NO_MORE_HOMEWORK
+    # 3. NO_MORE_HOMEWORK — require 2+ load signals to avoid over-triggering
+    nmh_signals = 0
     if load.insight_overload_risk == "high":
-        return "NO_MORE_HOMEWORK"
+        nmh_signals += 1
     if load.self_fixing_pressure == "high":
-        return "NO_MORE_HOMEWORK"
-    if (load.self_surveillance_present and
-            load.internal_performance_review in ("medium", "high")):
+        nmh_signals += 1
+    if load.self_surveillance_present and load.internal_performance_review in ("medium", "high"):
+        nmh_signals += 1
+    if nmh_signals >= 2:
         return "NO_MORE_HOMEWORK"
 
-    # 4. CONTINUITY_KEEPER
+    # 4. CONTINUITY_KEEPER — require 2+ signals to avoid over-triggering
+    ck_signals = 0
     if continuity.continuity_fear_present:
-        return "CONTINUITY_KEEPER"
+        ck_signals += 1
     if continuity.external_container_needed:
-        return "CONTINUITY_KEEPER"
+        ck_signals += 1
     if continuity.momentum_dependence == "high":
-        return "CONTINUITY_KEEPER"
+        ck_signals += 1
     if continuity.fear_of_forgetting_ideas:
+        ck_signals += 1
+    if ck_signals >= 2:
         return "CONTINUITY_KEEPER"
 
-    # 5. INTEGRATION
+    # 5. INTEGRATION — require negative/mixed valence to avoid stealing from DEFAULT_REFLECT
     topics = tags.topics or []
-    if "spirituality_integration" in topics:
+    if "spirituality_integration" in topics and emotions.valence in ("negative", "mixed"):
         return "INTEGRATION"
     if "travel_change" in topics and emotions.primary in ("overwhelm", "sadness", "anxiety"):
         return "INTEGRATION"
