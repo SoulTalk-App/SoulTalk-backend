@@ -876,6 +876,7 @@ async def pipeline_full(
 ):
     """Run the full pipeline (tag → mode → retrieve → respond) and return all intermediate outputs."""
     from app.services.ai.tagging_service import tagging_service
+    from app.services.ai.embedding_service import embedding_service
     from app.services.ai.mode_selector import select_mode, ModeResult
     from app.services.ai.retrieval_service import retrieval_service
     from app.services.ai.response_service import response_service
@@ -914,7 +915,16 @@ async def pipeline_full(
         "tags": tags.model_dump(),
     }
 
-    # Step 2: Mode select
+    # Step 2: Embed
+    t0 = time.monotonic()
+    vector = await embedding_service.embed(body.raw_text)
+    steps["embed"] = {
+        "elapsed_ms": int((time.monotonic() - t0) * 1000),
+        "model": "voyage-3-lite",
+        "dimensions": len(vector) if vector else 0,
+    }
+
+    # Step 3: Mode select
     t0 = time.monotonic()
     mode_result = select_mode(tags, tone_preference=body.tone_preference)
     steps["mode"] = {
@@ -939,7 +949,7 @@ async def pipeline_full(
         "hints": mode_result.hints,
     }
 
-    # Step 3: Retrieve
+    # Step 4: Retrieve
     t0 = time.monotonic()
     retrieval_tags = retrieval_service._extract_retrieval_tags(tags)
     scenarios = await retrieval_service.retrieve_scenarios(tags, db)
@@ -950,7 +960,7 @@ async def pipeline_full(
         "scenario_count": len(scenarios),
     }
 
-    # Step 4: Respond
+    # Step 5: Respond
     t0 = time.monotonic()
     mode_instructions = MODE_INSTRUCTIONS.get(mode_result.mode, "")
     scenario_guidance = "\n\n---\n\n".join(scenarios) if scenarios else "No specific scenario guidance."

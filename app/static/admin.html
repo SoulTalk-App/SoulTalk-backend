@@ -1013,13 +1013,18 @@ async function runFullPipeline() {
     // Step 1: Tags
     html += renderTagStep(data.steps.tag);
 
-    // Step 2: Mode
+    // Step 2: Embed
+    if (data.steps.embed) {
+      html += `<div class="card"><h3>Step 2: Embed <span class="badge badge-db">${data.steps.embed.elapsed_ms}ms &middot; ${data.steps.embed.model} &middot; ${data.steps.embed.dimensions} dims</span></h3></div>`;
+    }
+
+    // Step 3: Mode
     html += renderModeStep(data.steps.mode);
 
-    // Step 3: Retrieve
+    // Step 4: Retrieve
     html += renderRetrieveStep(data.steps.retrieve);
 
-    // Step 4: Respond
+    // Step 5: Respond
     html += renderRespondStep(data.steps.respond);
 
     container.innerHTML = html;
