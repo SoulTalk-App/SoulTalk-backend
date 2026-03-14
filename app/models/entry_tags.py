@@ -42,7 +42,7 @@ class EntryTags(Base):
         nullable=False
     )
     embedding = mapped_column(
-        Vector(1024),
+        Vector(512),
         nullable=True
     )
     embedding_model: Mapped[Optional[str]] = mapped_column(

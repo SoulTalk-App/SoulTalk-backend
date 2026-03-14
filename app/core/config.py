@@ -62,7 +62,7 @@ class Settings(BaseSettings):
     # Voyage AI (embeddings)
     VOYAGE_API_KEY: str = ""
     VOYAGE_EMBEDDING_MODEL: str = "voyage-3-lite"
-    VOYAGE_EMBEDDING_DIMENSIONS: int = 1024
+    VOYAGE_EMBEDDING_DIMENSIONS: int = 512
 
     # CORS
     CORS_ORIGINS: List[str] = [
