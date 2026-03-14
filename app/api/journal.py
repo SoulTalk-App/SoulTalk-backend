@@ -335,7 +335,18 @@ async def update_journal_entry(
             _run_pipeline, entry_id, current_user.id, data.raw_text, entry.created_at
         )
 
-    return _entry_response(entry)
+    # Entry was loaded without selectinload — return directly to avoid lazy load
+    return JournalEntryResponse(
+        id=str(entry.id),
+        raw_text=entry.raw_text,
+        mood=entry.mood,
+        ai_processing_status=entry.ai_processing_status,
+        is_draft=entry.is_draft,
+        created_at=entry.created_at,
+        updated_at=entry.updated_at,
+        tags=None,
+        ai_response=None,
+    )
 
 
 @router.delete("/{entry_id}", status_code=status.HTTP_204_NO_CONTENT)
