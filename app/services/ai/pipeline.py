@@ -61,6 +61,19 @@ async def process_journal_entry(
         )
 
         async with session_maker() as db:
+            # Delete stale tags/response from prior failed runs
+            old_tags = (await db.execute(
+                select(EntryTags).where(EntryTags.entry_id == entry_id)
+            )).scalar_one_or_none()
+            if old_tags:
+                await db.delete(old_tags)
+            old_resp = (await db.execute(
+                select(AIResponse).where(AIResponse.entry_id == entry_id)
+            )).scalar_one_or_none()
+            if old_resp:
+                await db.delete(old_resp)
+            await db.flush()
+
             entry_tags = EntryTags(
                 entry_id=entry_id,
                 user_id=user_id,
