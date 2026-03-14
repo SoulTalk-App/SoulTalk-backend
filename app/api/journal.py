@@ -189,7 +189,18 @@ async def create_journal_entry(
             _run_pipeline, entry.id, current_user.id, data.raw_text, entry.created_at
         )
 
-    return _entry_response(entry)
+    # Fresh entry has no tags/ai_response yet — return directly to avoid lazy load
+    return JournalEntryResponse(
+        id=str(entry.id),
+        raw_text=entry.raw_text,
+        mood=entry.mood,
+        ai_processing_status=entry.ai_processing_status,
+        is_draft=entry.is_draft,
+        created_at=entry.created_at,
+        updated_at=entry.updated_at,
+        tags=None,
+        ai_response=None,
+    )
 
 
 @router.get("/", response_model=JournalEntryListResponse)
